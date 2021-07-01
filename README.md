@@ -1,5 +1,7 @@
 # dgSPARSE Library
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+
 ## Introdution
 
 The dgSPARSE Library (Deep Graph Sparse Library) is a high performance library for sparse kernel acceleration on GPUs based on CUDA.
