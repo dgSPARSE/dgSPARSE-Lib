@@ -15,7 +15,7 @@ struct SpMatCsrDescr_t {
     int nnz;
     int *indptr;
     int *indices;
-    float *data=nullptr;
+    float *data;
 };
 
 

@@ -7,6 +7,7 @@
 #include "csrspmm_parreduce.cuh"
 #include "csrspmm_rowcaching.cuh"
 
+#include <iostream>
 
 enum gespmmAlg_t {
     GESPMM_ALG_PARREDUCE_ROWBALANCE,

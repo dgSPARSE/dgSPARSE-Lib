@@ -14,7 +14,7 @@ void spmm_cuda(
     int *colind,
     float *values,
     float *dense,
-    float *out);
+    float *out)
 {
     gespmmAlg_t alg = (k >= 32) ? GESPMM_ALG_ROWCACHING_ROWBALANCE :
                       (k >  4)  ? GESPMM_ALG_SEQREDUCE_ROWBALANCE  :
@@ -23,7 +23,7 @@ void spmm_cuda(
     SpMatCsrDescr_t matA = {m,      // number of A rows
                             0,      // A column-number is dummy in row-balance algorithms 
                             0,      // A nnz is dummy in row-balance algorithms
-                            rowPtr, 
+                            rowptr, 
                             colind,
                             values  // three arrays of A's CSR format˜
                             };
