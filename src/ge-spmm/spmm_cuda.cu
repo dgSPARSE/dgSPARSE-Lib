@@ -14,11 +14,18 @@ void spmm_cuda(
     int *colind,
     float *values,
     float *dense,
-    float *out)
+    float *out,
+    bool transpose_BC=true)
 {
-    gespmmAlg_t alg = (k >= 32) ? GESPMM_ALG_ROWCACHING_ROWBALANCE :
-                      (k >  4)  ? GESPMM_ALG_SEQREDUCE_ROWBALANCE  :
-                                  GESPMM_ALG_PARREDUCE_ROWBALANCE;
+    gespmmAlg_t alg;
+    if (transpose_BC) {
+        alg = (k >= 32) ? GESPMM_ALG_ROWCACHING_ROWBALANCE :
+              (k >  4)  ? GESPMM_ALG_SEQREDUCE_ROWBALANCE  :
+                          GESPMM_ALG_PARREDUCE_ROWBALANCE;
+    }
+    else {
+        alg = GESPMM_ALG_PARREDUCE_ROWBALANCE_NON_TRANSPOSE;
+    }
 
     SpMatCsrDescr_t matA = {m,      // number of A rows
                             0,      // A column-number is dummy in row-balance algorithms 
@@ -32,6 +39,7 @@ void spmm_cuda(
                     dense,
                     k,
                     out,
+                    transpose_BC,
                     alg 
                 );
 }
