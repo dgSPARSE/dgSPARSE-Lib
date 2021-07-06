@@ -55,3 +55,56 @@ __device__ __forceinline__ index_t binary_search_segment_number(
     }
     return (hi - 1);
 }
+
+// calculate the deviation of a matrix's row-length 
+// (\sigma ^2 = \sum_N( |x - x_avg|^2 )) / N
+// assume initially *vari == 0
+// Use example:
+//    calc_vari<float><<<((L + 511) / 512), 512>>>(vari, indptr, nrow, nnz)
+
+template<typename FTYPE>
+__global__ void calc_vari(FTYPE* vari,     // calculation result goes to this address
+                        const int* indptr,  // the csr indptr array 
+                        const int nrow,     // length of the array
+                        const int nnz       // total number of non-zeros
+                    )
+{
+    __shared__ FTYPE shared[32];
+    FTYPE avg = ((FTYPE)nnz) / nrow;
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int x;
+    if (tid < nrow) 
+    {   x   = indptr[tid + 1] - indptr[tid]; }
+
+    FTYPE r = x - avg;
+          r = r * r;
+    if (tid >= nrow) 
+    {   r   = 0; }
+    
+          r += __shfl_down_sync(FULLMASK, r, 16);
+          r += __shfl_down_sync(FULLMASK, r, 8);
+          r += __shfl_down_sync(FULLMASK, r, 4);
+          r += __shfl_down_sync(FULLMASK, r, 2);
+          r += __shfl_down_sync(FULLMASK, r, 1);
+
+    if ((threadIdx.x & 31) == 0) {
+        shared[(threadIdx.x >> 5)] = r;
+    }
+    __syncthreads();
+
+    if ((threadIdx.x >> 5) == 0) {
+        r   = shared[threadIdx.x & 31];
+        if ((threadIdx.x << 5) >= blockDim.x) 
+          r = 0;
+
+        r += __shfl_down_sync(FULLMASK, r, 16);
+        r += __shfl_down_sync(FULLMASK, r, 8);
+        r += __shfl_down_sync(FULLMASK, r, 4);
+        r += __shfl_down_sync(FULLMASK, r, 2);
+        r += __shfl_down_sync(FULLMASK, r, 1);
+
+        if (threadIdx.x == 0) {
+            atomicAdd(vari, (r / nrow));
+        }
+    }
+}
