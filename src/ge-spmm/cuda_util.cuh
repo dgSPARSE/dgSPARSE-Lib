@@ -2,21 +2,12 @@
 
 #pragma once
 
-#include "cuda.h"
+#include <cuda.h>
 
 /// heuristic choice of thread-block size
 const int RefThreadPerBlock = 256; 
 
 #define CEIL(x, y) (((x) + (y) - 1) / (y))
-
-struct SpMatCsrDescr_t {
-    int nrow;
-    int ncol;
-    int nnz;
-    int *indptr;
-    int *indices;
-    float *data;
-};
 
 
 #define FULLMASK 0xffffffff
@@ -107,4 +98,23 @@ __global__ void calc_vari(FTYPE* vari,     // calculation result goes to this ad
             atomicAdd(vari, (r / nrow));
         }
     }
+}
+
+template<typename T>
+__device__ __forceinline__ void ldg_float(float *r, const float*a)
+{
+    (reinterpret_cast<T *>(r))[0] = *(reinterpret_cast<const T*>(a));
+}
+template<typename T>
+__device__ __forceinline__ void st_float(float *a, float *v)
+{
+    *(T*)a = *(reinterpret_cast<T *>(v));
+}
+__device__ __forceinline__ void mac_float2(float4 c, const float a, const float2 b)
+{
+    c.x += a * b.x ; c.y += a * b.y ;
+}
+__device__ __forceinline__ void mac_float4(float4 c, const float a, const float4 b)
+{
+    c.x += a * b.x ; c.y += a * b.y ; c.z += a * b.z ; c.w += a * b.w ; 
 }
