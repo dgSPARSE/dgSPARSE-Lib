@@ -47,7 +47,7 @@ __global__ void csrspmm_non_transpose_parreduce_rowbalance_kernel(const int M,
         
         for (int jj = start + lane_id; jj < end; jj += 32) {
             k = csr_indices[jj];
-            v = csr_data[jj];
+            v = __guard_load_default_one<float>(csr_data, jj);
             
             // load B-elements in vector-type
             #pragma unroll
@@ -88,7 +88,7 @@ Ndim_Residue:
         
         for (int jj = start + lane_id; jj < end; jj += 32) {
             k = csr_indices[jj];
-            v = csr_data[jj];
+            v = __guard_load_default_one<float>(csr_data, jj);
             
             #pragma unroll
             for (int i = 0; i < CoarsenFactor; i++)
@@ -168,7 +168,7 @@ __global__ void csrspmm_non_transpose_parreduce_nnzbalance_kernel(const int M,
         
         if (nz_id < nnz) {
             k = csr_indices[nz_id];
-            v = csr_data[nz_id];
+            v = __guard_load_default_one<float>(csr_data, nz_id);
         }
         else {
             k = 0;
@@ -226,7 +226,7 @@ Ndim_Residue:
 
     if (nz_id < nnz) {
         k = csr_indices[nz_id];
-        v = csr_data[nz_id];
+        v = __guard_load_default_one<float>(csr_data, nz_id);
     }
     else {
         k = 0;
@@ -317,7 +317,8 @@ __global__ void csrspmm_non_transpose_seqreduce_rowbalance_kernel(const int M,
         for ( int p=start; p<end; p++ )
         {
             k = csr_indices[p];
-            v = csr_data[p];
+            v = __guard_load_default_one<float>(csr_data, p);
+
             // load B-elements in vector-type
             #pragma unroll
             for (int i = 0; i < CoarsenFactor; i++) {
@@ -344,7 +345,8 @@ Ndim_Residue:
         for ( int p=start; p<end; p++ )
         {
             k = csr_indices[p];
-            v = csr_data[p];
+            v = __guard_load_default_one<float>(csr_data, p);
+            
             // load B-elements in vector-type
             #pragma unroll
             for (int i = 0; i < CoarsenFactor; i++) {
@@ -409,7 +411,8 @@ __global__ void csrspmm_non_transpose_seqreduce_nnzbalance_kernel(const int M,
             if (eid >= nnz) break;
             if (ii < step) {
                 k = csr_indices[eid];
-                v = csr_data[eid];
+                v = __guard_load_default_one<float>(csr_data, eid);
+            
                 #pragma unroll
                 for (int i = 0; i < CoarsenFactor; i++) {
                     c[i] += v * B_panels[i][k];
@@ -425,7 +428,8 @@ __global__ void csrspmm_non_transpose_seqreduce_nnzbalance_kernel(const int M,
                 step = csr_indptr[row+1] - eid;
                 
                 k = csr_indices[eid];
-                v = csr_data[eid];
+                v = __guard_load_default_one<float>(csr_data, eid);
+
                 #pragma unroll
                 for (int i = 0; i < CoarsenFactor; i++) {
                     c[i] = v * B_panels[i][k];
@@ -453,7 +457,8 @@ Ndim_Residue:
             if (eid >= nnz) break;
             if (ii < step) {
                 k = csr_indices[eid];
-                v = csr_data[eid];
+                v = __guard_load_default_one<float>(csr_data, eid);
+                
                 #pragma unroll
                 for (int i = 0; i < CoarsenFactor; i++) {
                     if (i < valid_lane_num)
@@ -471,7 +476,7 @@ Ndim_Residue:
                 step = csr_indptr[row+1] - eid;
                 
                 k = csr_indices[eid];
-                v = csr_data[eid];
+                v = __guard_load_default_one<float>(csr_data, eid);
                 #pragma unroll
                 for (int i = 0; i < CoarsenFactor; i++) {
                     if (i < valid_lane_num)

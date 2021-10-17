@@ -54,7 +54,8 @@ void csrspmm_rowcaching_rowbalance_kernel(const int M,
     for (int p = start; p < end; p += 32) {
         // copy a bucket of sparse row elements into shared memory
         if (p + lane_id < end) {
-            workspace_data[lane_id] = csr_data[p + lane_id];
+            workspace_data[lane_id] = 
+                __guard_load_default_one<float>(csr_data, (p + lane_id));
             workspace_indices[lane_id] = csr_indices[p + lane_id];
         }
         else {
@@ -89,7 +90,8 @@ Ndim_Residue:
     for (int p = start; p < end; p += 32) {
         // copy a bucket of sparse row elements into shared memory
         if (p + lane_id < end) {
-            workspace_data[lane_id] = csr_data[p + lane_id];
+            workspace_data[lane_id] = 
+                __guard_load_default_one<float>(csr_data, (p + lane_id));
             workspace_indices[lane_id] = csr_indices[p + lane_id];
         }
         else {
@@ -176,7 +178,8 @@ void csrspmm_rowcaching_nnzbalance_kernel(const int M,
         int thread_nz_id = tile_base + lane_id;
         if (thread_nz_id < nnz) {
             workspace_colid[lane_id] = csr_indices[thread_nz_id];
-            workspace_data[lane_id] = csr_data[thread_nz_id];
+            workspace_data[lane_id] = 
+                __guard_load_default_one<float>(csr_data, thread_nz_id);
         }
         else {
             workspace_colid[lane_id] = 0;
@@ -237,7 +240,8 @@ Ndim_Residue:
         int thread_nz_id = tile_base + lane_id;
         if (thread_nz_id < nnz) {
             workspace_colid[lane_id] = csr_indices[thread_nz_id];
-            workspace_data[lane_id] = csr_data[thread_nz_id];
+            workspace_data[lane_id] = 
+                __guard_load_default_one<float>(csr_data, thread_nz_id);
         }
         else {
             workspace_colid[lane_id] = 0;

@@ -131,6 +131,18 @@ void spmm_cuda(
                 );
 }
 
+void spmm_cuda_no_edge_value(
+    int nrowA, 
+    int ncolB,
+    int *rowptr,
+    int *colind,
+    float *,
+    float *dense,
+    float *out)
+{
+    spmm_cuda(nrowA, ncolB, rowptr, colind, nullptr, dense, out);
+}
+
 // // new dgSparse API
 // void spmm_cuda(
 //     int nrowA, 

@@ -46,6 +46,13 @@ void spmm_cuda( int nrowA,
                 float *values,
                 float *dense,
                 float *out);
+void spmm_cuda_no_edge_value(int nrowA, 
+                int ncolB,
+                int *rowptr,
+                int *colind,
+                float *,
+                float *dense,
+                float *out);
 
 // // new dgSparse API
 // void spmm_cuda( int nrowA, 

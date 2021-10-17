@@ -45,7 +45,7 @@ __global__ void csrSpmvRowVector(
 
         for (int jj = start + lane_id; jj < end; jj += 32) {
             col = __ldg(csrCol + jj);
-            val = __ldg(csrVal + jj);
+            val = __guard_load_default_one<float>(csrVal, jj);
             res += val * __ldg(x + col);
         }
 
@@ -76,7 +76,7 @@ __global__ void csrSpmmvRowVector(
 
         for (int jj = start + lane_id; jj < end; jj += 32) {
             col = __ldg(csrCol + jj);
-            val = __ldg(csrVal + jj);
+            val = __guard_load_default_one<float>(csrVal, jj);
             #pragma unroll
             for (int kk = 0; kk < CF; kk++) {
                 res[kk] += val * __ldg(offset_X_addr + kk*nc + col);
@@ -118,7 +118,7 @@ __global__ void csrSpmmRowVector(int nr, int nc, int nv, int nnz, const int *csr
 
         for (int jj = start + lane_id; jj < end; jj += 32) {
             col = __ldg(csrCol + jj);
-            val = __ldg(csrVal + jj);
+            val = __guard_load_default_one(csrVal, jj);
             (reinterpret_cast<FTYPE*>( tmp))[0] = *(reinterpret_cast<const FTYPE*> (offset_X_addr + col*nv));
             #pragma unroll
             for (int kk = 0; kk < CF; kk++) 
@@ -152,7 +152,7 @@ __global__ void csrSpmvRowScalar(
     int col;
     for (int p = start; p < end; p++) {
         col = __ldg(csrCol + p);
-        val = __ldg(csrVal + p);
+        val = __guard_load_default_one<float>(csrVal, p);
         res += val * __ldg(x + col);
     }
     if (row < nr) {
@@ -178,7 +178,7 @@ __global__ void csrSpmmvRowScalar(int nr, int nc, int nv, int nnz, const int *cs
         
     for (int p = start; p < end; p++) {
         col = __ldg(csrCol + p);
-        val = __ldg(csrVal + p);
+        val = __guard_load_default_one<float>(csrVal, p);
         #pragma unroll
         for (int kk=0; kk<CF; kk++) {
             res[kk] += val * __ldg(offset_X_addr + col + kk*nc);
@@ -205,7 +205,7 @@ __global__ void csrSpmmRowScalar(int nr, int nc, int nv, int nnz, const int *csr
         float val = 0.0; int col;
         for (int ptr = start; ptr < end; ptr++) {
             col = __ldg(csrCol + ptr) * nv;
-            val += __ldg(csrVal + ptr) * __ldg(X + col + lane_id);
+            val += __guard_load_default_one<float>(csrVal, ptr) * __ldg(X + col + lane_id);
         }
         Y[row * nv + lane_id] = val;
     }
@@ -228,7 +228,7 @@ __global__ void csrSpmvMrgVector(
         
         if (tid < nnz) {
             col = __ldg(csrCol + tid);
-            val = __ldg(csrVal + tid);
+            val = __guard_load_default_one<float>(csrVal, tid);
             val *= __ldg(x + col);
         }
         else {
@@ -272,7 +272,7 @@ __global__ void csrSpmmvMrgVector(int nr, int nc, int nv, int nnz_, const int *c
         
         if (tid < nnz) {
             col = __ldg(csrCol + tid);
-            val = __ldg(csrVal + tid);
+            val = __guard_load_default_one<float>(csrVal, tid);
             #pragma unroll 
             for (int kk=0; kk<CF; kk++) {
                 res[kk] = val * __ldg(offset_X_addr + kk*nc + col);
@@ -330,7 +330,7 @@ __global__ void csrSpmmMrgVector(int nr, int nc, int nv, int nnz_, const int *cs
         
         if (tid < nnz) {
             col = __ldg(csrCol + tid);
-            val = __ldg(csrVal + tid);
+            val = __guard_load_default_one<float>(csrVal, tid);
         }
         (reinterpret_cast<FTYPE*> (res))[0] = *(reinterpret_cast<const FTYPE*> (offset_X_addr + col*nv));
         #pragma unroll
@@ -390,7 +390,7 @@ __global__ void csrSpmvMrgScalar(
             if (tid >= nnz) break;
             if (ii < step) {
                 col = __ldg(csrCol + tid);
-                val += __ldg(csrVal + tid) * __ldg(x + col);
+                val += __guard_load_default_one<float>(csrVal, tid) * __ldg(x + col);
                 tid++;
             }
             else {
@@ -398,7 +398,7 @@ __global__ void csrSpmvMrgScalar(
                 row = binary_search_segment_number<int>(csrRowPtr, nr, nnz, tid);
                 step = __ldg(csrRowPtr + row + 1) - tid;
                 col = __ldg(csrCol + tid);
-                val = __ldg(csrVal + tid) * __ldg(x + col);
+                val = __guard_load_default_one<float>(csrVal, tid) * __ldg(x + col);
                 tid++;
             }
         }
@@ -429,7 +429,7 @@ __global__ void csrSpmmvMrgScalar(
             if (tid >= nnz) break;
             if (ii < step) {
                 col = __ldg(csrCol + tid);
-                val = __ldg(csrVal + tid);
+                val = __guard_load_default_one<float>(csrVal, tid);
                 #pragma unroll
                 for (int kk=0; kk<CF; kk++) {
                     res[kk] += val * __ldg(offset_X_addr + kk*nc + col);
@@ -444,7 +444,7 @@ __global__ void csrSpmmvMrgScalar(
                 row = binary_search_segment_number<int>(csrRowPtr, nr, nnz, tid);
                 step = __ldg(csrRowPtr + row + 1) - tid;
                 col = __ldg(csrCol + tid);
-                val = __ldg(csrVal + tid);
+                val = __guard_load_default_one<float>(csrVal, tid);
                 #pragma unroll
                 for (int kk=0; kk<CF; kk++) {
                     res[kk] = val * __ldg(offset_X_addr + kk*nc + col);
@@ -479,7 +479,7 @@ __global__ void csrSpmmMrgScalar(int nr, int nc, int nv, int nnz_, const int *cs
             if (eid >= nnz) break;
             if (ii < step) {
                 col = __ldg(csrCol + eid) * nv;
-                val += __ldg(csrVal + eid) * __ldg(X + col + lane_id);
+                val += __guard_load_default_one<float>(csrVal, eid) * __ldg(X + col + lane_id);
                 
                 eid++;
             }
@@ -489,7 +489,7 @@ __global__ void csrSpmmMrgScalar(int nr, int nc, int nv, int nnz_, const int *cs
                 row = binary_search_segment_number<int>(csrRowPtr, nr, nnz, eid);
                 step = __ldg(csrRowPtr + row + 1) - eid;
                 col = __ldg(csrCol + eid) * nv;
-                val = __ldg(csrVal + eid) * __ldg(X + col + lane_id);
+                val = __guard_load_default_one<float>(csrVal, eid) * __ldg(X + col + lane_id);
                 
                 eid++;
             }

@@ -47,8 +47,8 @@ __global__ void csrspmm_parreduce_rowbalance_kernel(const int M,
         
         for (int jj = start + lane_id; jj < end; jj += 32) {
             k = csr_indices[jj];
-            v = csr_data[jj];
-            
+            v = __guard_load_default_one<float>(csr_data, jj);
+
             // load B-elements in vector-type
             *(access_t*)buffer = *(access_t*)(B_panel + k * ldB);
                         
@@ -88,8 +88,8 @@ Ndim_Residue:
         
         for (int jj = start + lane_id; jj < end; jj += 32) {
             k = csr_indices[jj];
-            v = csr_data[jj];
-            
+            v = __guard_load_default_one<float>(csr_data, jj);
+
             #pragma unroll
             for (int i = 0; i < CoarsenFactor; i++)
             {
@@ -167,7 +167,7 @@ __global__ void csrspmm_parreduce_nnzbalance_kernel(const int M,
         
         if (nz_id < nnz) {
             k = csr_indices[nz_id];
-            v = csr_data[nz_id];
+            v = __guard_load_default_one<float>(csr_data, nz_id);
         }
         else {
             k = 0;
@@ -226,7 +226,7 @@ Ndim_Residue:
 
     if (nz_id < nnz) {
         k = csr_indices[nz_id];
-        v = csr_data[nz_id];
+        v = __guard_load_default_one<float>(csr_data, nz_id);
     }
     else {
         k = 0;

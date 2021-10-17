@@ -40,7 +40,7 @@ __global__ void spmm_csr_scalar_row_kernel
         for ( int p=start; p<end; p++ )
         {
             col = __ldg(colIdx + p);
-            val = __ldg(values + p);
+            val = __guard_load_default_one<float>(values, p);
             res += val * __ldg(dnInput + col * nv);
         }
         dnOutput[row * nv] = res;
@@ -96,8 +96,8 @@ __global__ void spmm_csr_vector_row_kernel
         
         for (int jj = start + lane_id; jj < end; jj += 32) {
             col = __ldg(colIdx + jj);
-            val = __ldg(values + jj);
-            
+            val = __guard_load_default_one<float>(values, jj);
+
             ldg_float<LoadStoreType>(dnVal, dnInput + col*nv );
             
             #pragma unroll
@@ -153,7 +153,7 @@ __global__ void spmm_coo_scalar_row_kernel
 
         int row = __ldg(rowIdx + tid);
         int col = __ldg(colIdx + tid);
-        float val = __ldg(values + tid) * __ldg(dnInput + col*nv);
+        float val = __guard_load_default_one<float>(values, tid) * __ldg(dnInput + col*nv);
         int curr_row = row;
 
         for (int ii = 1; ii < NE_PER_THREAD && ++tid < nnz; ii++) {
@@ -163,11 +163,11 @@ __global__ void spmm_coo_scalar_row_kernel
             
             if (row!=curr_row) {
                 atomicAdd(&dnOutput[curr_row*nv], val);
-                val = __ldg(values + tid) * __ldg(dnInput + col*nv);
+                val = __guard_load_default_one<float>(values, tid) * __ldg(dnInput + col*nv);
                 curr_row = row;
             }
             else {
-                val += __ldg(values + tid) * __ldg(dnInput + col*nv);
+                val += __guard_load_default_one<float>(values, tid) * __ldg(dnInput + col*nv);
             }
         }
         atomicAdd(&dnOutput[curr_row*nv], val);       
@@ -220,7 +220,7 @@ __global__ void spmm_coo_vector_row_kernel
 
             row = __ldg(rowIdx + tid);
             col = __ldg(colIdx + tid);
-            val = __ldg(values + tid);
+            val = __guard_load_default_one(values, tid);
 
             
             ldg_float<LoadStoreType>(res, dnInput + col*nv);
@@ -397,7 +397,7 @@ __global__ void spmm_coo_scalar_col_kernel(
 
         int row = __ldg(rowIdx + tid);
         int col = __ldg(colIdx + tid);
-        float val = __ldg(values + tid);
+        float val = __guard_load_default_one(values, tid);
         #pragma unroll
         for (int kk=0; kk<CF; kk++) {
             res[kk] = val * __ldg(offset_X_addr + kk*nc + col);
@@ -414,7 +414,7 @@ __global__ void spmm_coo_scalar_col_kernel(
                 for (int kk=0; kk<CF; kk++) {
                     atomicAdd(&Y[offset_Y + kk*nr + curr_row], res[kk]);
                 }     
-                val = __ldg(values + tid);
+                val = __guard_load_default_one<float>(values, tid);
                 #pragma unroll
                 for (int kk=0; kk<CF; kk++) {
                     res[kk] = val * __ldg(offset_X_addr + kk*nc + col);
@@ -422,7 +422,7 @@ __global__ void spmm_coo_scalar_col_kernel(
                 curr_row = row;
             }
             else {
-                val = __ldg(values + tid);
+                val = __guard_load_default_one<float>(values, tid);
                 #pragma unroll
                 for (int kk=0; kk<CF; kk++) {
                     res[kk] += val * __ldg(offset_X_addr + kk*nc + col);
@@ -466,7 +466,7 @@ __global__ void spmm_coo_vector_col_kernel(
         if (tid < nnz) {
             row = __ldg(rowIdx + tid);
             col = __ldg(colIdx + tid);
-            val = __ldg(values + tid);
+            val = __guard_load_default_one<float>(values, tid);
             #pragma unroll 
             for (int kk=0; kk<CF; kk++) {
                 res[kk] = val * __ldg(offset_X_addr + kk*nc + col);
@@ -543,7 +543,7 @@ __global__ void spmv_csr_scalar_kernel
         for ( int p=start; p<end; p++ )
         {
             col = __ldg(colIdx + p);
-            val = __ldg(values + p);
+            val = __guard_load_default_one<float>(values, p);
             res += val * __ldg(dnInput + col);
         }
         dnOutput[row] = res;
@@ -579,7 +579,7 @@ __global__ void spmv_coo_scalar_kernel
 
         int row = __ldg(rowIdx + tid);
         int col = __ldg(colIdx + tid);
-        float val = __ldg(values + tid) * __ldg(dnInput + col);
+        float val = __guard_load_default_one<float>(values, tid) * __ldg(dnInput + col);
         int curr_row = row;
 
         for (int ii = 1; ii < NE_PER_THREAD && ++tid < nnz; ii++) {
@@ -589,11 +589,11 @@ __global__ void spmv_coo_scalar_kernel
             
             if (row!=curr_row) {
                 atomicAdd(&dnOutput[curr_row], val);
-                val = __ldg(values + tid) * __ldg(dnInput + col);
+                val = __guard_load_default_one<float>(values, tid) * __ldg(dnInput + col);
                 curr_row = row;
             }
             else {
-                val += __ldg(values + tid) * __ldg(dnInput + col);
+                val += __guard_load_default_one<float>(values, tid) * __ldg(dnInput + col);
             }
         }
         atomicAdd(&dnOutput[curr_row], val);       
@@ -639,7 +639,7 @@ __global__ void spmv_csr_vector_kernel
         
         for (int jj = start + lane_id; jj < end; jj += 32) {
             col = __ldg(colIdx + jj);
-            val = __ldg(values + jj);
+            val = __guard_load_default_one<float>(values, jj);
             ldg_float<LoadStoreType>(dnVal, dnInput + col*nv );
             #pragma unroll
             for (int kk=0; kk<numberOfElements; kk++) 
@@ -693,7 +693,7 @@ __global__ void spmv_coo_vector_kernel
 
             row = __ldg(rowIdx + tid);
             col = __ldg(colIdx + tid);
-            val = __ldg(values + tid);
+            val = __guard_load_default_one<float>(values, tid);
             ldg_float<LoadStoreType>(res, dnInput + col*nv);
             #pragma unroll
             for (int kk=0; kk<numberOfElements; kk++) 

@@ -33,7 +33,7 @@ __global__ void csrspmm_seqreduce_rowbalance_kernel(const int nr,
         for ( int p=start; p<end; p++ )
         {
             col = __ldg(colIdx + p);
-            val = __ldg(values + p);
+            val = __guard_load_default_one<float>(values, p);
             res += val * __ldg(dnInput + col * nv);
         }
         dnOutput[row * nv] = res;
@@ -69,7 +69,8 @@ __global__ void csrspmm_seqreduce_nnzbalance_kernel(const int nr,
             if (eid >= nnz) break;
             if (ii < step) {
                 col = __ldg(colIdx + eid) * nv;
-                val += __ldg(values + eid) * __ldg(dnInput + col + v_id);
+                val += __guard_load_default_one<float>(values, eid)
+                     * __ldg(dnInput + col + v_id);
                 
                 eid++;
             }
@@ -79,7 +80,8 @@ __global__ void csrspmm_seqreduce_nnzbalance_kernel(const int nr,
                 row = binary_search_segment_number<int>(rowPtr, nr, nnz, eid);
                 step = __ldg(rowPtr + row + 1) - eid;
                 col = __ldg(colIdx + eid) * nv;
-                val = __ldg(values + eid) * __ldg(dnInput + col + v_id);
+                val = __guard_load_default_one<float>(values, eid) 
+                    * __ldg(dnInput + col + v_id);
                 
                 eid++;
             }

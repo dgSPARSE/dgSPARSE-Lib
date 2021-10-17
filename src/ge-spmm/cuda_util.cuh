@@ -118,3 +118,10 @@ __device__ __forceinline__ void mac_float4(float4 c, const float a, const float4
 {
     c.x += a * b.x ; c.y += a * b.y ; c.z += a * b.z ; c.w += a * b.w ; 
 }
+
+template<typename T>
+__device__ __forceinline__ T __guard_load_default_one(const T* base, int offset)
+{
+    if (base != nullptr) return base[offset];
+    else                 return static_cast<T>(1);
+}
