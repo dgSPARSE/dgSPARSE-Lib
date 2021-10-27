@@ -1,7 +1,6 @@
-#include "computeUtil.h"
+#include "../util/cuda_util.h"
 #include <cuda.h>
 
-template <typename T>
 __global__ void sddmm_csr_ebalance_vec4(int D_kcols, const int S_mrows,
                                         const unsigned long Size,
                                         int *S_csrRowPtr, int *S_csrColInd,
