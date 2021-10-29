@@ -1,5 +1,5 @@
 // file: csrspmm_seqreduce.cuh
-//      Implementation of sequential reduction kernels 
+//      Implementation of sequential reduction kernels
 
 #include "cuda_util.cuh"
 #include "gespmm.h"
@@ -38,8 +38,33 @@ __global__ void csrspmm_seqreduce_rowbalance_kernel(const int nr,
         }
         dnOutput[row * nv] = res;
     }
+    dnOutput[row * nv] = res;
+  }
 }
 
+__global__ void
+csrspmm_seqreduce_nnzbalance_kernel(const int nr, const int nv, const int nc,
+                                    const int nnz, const int rowPtr[],
+                                    const int colIdx[], const float values[],
+                                    const float dnInput[], float dnOutput[]) {
+
+  int Nnzdim_thread = blockDim.y * gridDim.x;
+  int NE_PER_THREAD = DIV_UP(nnz, Nnzdim_thread);
+  int eid = (blockIdx.x * blockDim.y + threadIdx.y) * NE_PER_THREAD;
+  int v_id = (blockIdx.y * blockDim.x) + threadIdx.x;
+  int col = 0;
+  float val = 0.0;
+
+  if (eid < nnz) {
+    int row = binary_search_segment_number<int>(rowPtr, nr, nnz, eid);
+    int step = __ldg(rowPtr + row + 1) - eid;
+
+    for (int ii = 0; ii < NE_PER_THREAD; ii++) {
+      if (eid >= nnz)
+        break;
+      if (ii < step) {
+        col = __ldg(colIdx + eid) * nv;
+        val += __ldg(values + eid) * __ldg(dnInput + col + v_id);
 
 __global__ void csrspmm_seqreduce_nnzbalance_kernel(const int nr,
     const int nv,
@@ -90,31 +115,21 @@ __global__ void csrspmm_seqreduce_nnzbalance_kernel(const int nr,
     }  
 }
 
+void csrspmm_seqreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
+                                  const int N, float *C) {
+  int Mdim_worker = spmatA.nrow;
+  int Ndim_worker = N;
+  int Ndim_threadblock = CEIL(Ndim_worker, RefThreadPerBlock);
+  int Ndim_thread_per_tb = min(Ndim_worker, RefThreadPerBlock);
+  int Mdim_thread_per_tb = CEIL(RefThreadPerBlock, Ndim_thread_per_tb);
+  int Mdim_threadblock = CEIL(Mdim_worker, Mdim_thread_per_tb);
 
-void csrspmm_seqreduce_rowbalance(  const SpMatCsrDescr_t spmatA,
-                                    const float *B,
-                                    const int   N,
-                                    float       *C
-                                    )
-{
-    int Mdim_worker = spmatA.nrow;
-    int Ndim_worker = N;
-    int Ndim_threadblock = CEIL(Ndim_worker, RefThreadPerBlock);
-    int Ndim_thread_per_tb = min(Ndim_worker, RefThreadPerBlock);
-    int Mdim_thread_per_tb = CEIL(RefThreadPerBlock, Ndim_thread_per_tb);
-    int Mdim_threadblock = CEIL(Mdim_worker, Mdim_thread_per_tb);
+  dim3 gridDim(Mdim_threadblock, Ndim_threadblock, 1);
+  dim3 blockDim(Ndim_thread_per_tb, Mdim_thread_per_tb, 1);
 
-    dim3 gridDim(Mdim_threadblock, Ndim_threadblock, 1);
-    dim3 blockDim(Ndim_thread_per_tb, Mdim_thread_per_tb, 1);
-
-    csrspmm_seqreduce_rowbalance_kernel<<<gridDim, blockDim>>>(spmatA.nrow, 
-                                    N,
-                                    spmatA.ncol,
-                                    spmatA.indptr,
-                                    spmatA.indices,
-                                    spmatA.data,
-                                    B,
-                                    C);
+  csrspmm_seqreduce_rowbalance_kernel<<<gridDim, blockDim>>>(
+      spmatA.nrow, N, spmatA.ncol, spmatA.indptr, spmatA.indices, spmatA.data,
+      B, C);
 }
 
 void csrspmm_seqreduce_nnzbalance(  const SpMatCsrDescr_t spmatA,
