@@ -30,7 +30,7 @@ $(TARGET): $(OBJS)
 libgespmm.a: $(OBJS)
 	ar cr $@ $^
 	ranlib $@
-
+	
 %.cu.o: %.cu
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
 
@@ -42,4 +42,4 @@ libgespmm.a: $(OBJS)
 # 	cp $(TARGET) lib/$(TARGET)
 
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o *.a $(TARGET)

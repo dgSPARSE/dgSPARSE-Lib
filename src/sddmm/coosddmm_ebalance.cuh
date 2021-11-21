@@ -1,4 +1,4 @@
-#include "../util/cuda_util.h"
+#include "../util/cuda_util.cuh"
 #include <cuda.h>
 
 __global__ void sddmm_coo_ebalance_vec4(int D_kcols, const unsigned long Size,
