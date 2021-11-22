@@ -1,5 +1,6 @@
-TARGET = libgespmm.so
+TARGET = libgespmm.a
 
+OBJ_DIR = ../../objs
 OBJS =\
 csrspmm_non_transpose.cu.o \
 csrspmm_parreduce.cu.o \
@@ -12,6 +13,7 @@ gespmm.cc.o
 NVCC = nvcc
 NVCC_FLAGS =\
 -O3  -lcusparse \
+-shared \
 -Xcompiler "-fPIC" \
 -gencode arch=compute_70,code=sm_70 \
 -gencode arch=compute_75,code=sm_75 \
@@ -20,26 +22,27 @@ NVCC_FLAGS =\
 
 CC = g++
 CC_FLAGS = -O2 -Wall -std=c++11 -fPIC
-CC_INC = -I/usr/local/cuda/include
+INC = -I/usr/local/cuda/include -I../../include/
 
-all: $(TARGET) libgespmm.a
+all: $(TARGET)
 
-$(TARGET): $(OBJS)
-	$(NVCC) -shared -o $@ $^
+# $(TARGET): $(OBJS)
+# 	$(NVCC) -shared -o $@ $^
 
-libgespmm.a: $(OBJS)
+$(TARGET) : $(OBJS)
 	ar cr $@ $^
 	ranlib $@
+	cp $^ $(OBJ_DIR)
 	
 %.cu.o: %.cu
-	$(NVCC) $(NVCC_FLAGS) -c $< -o $@
+	$(NVCC) $(NVCC_FLAGS) $(INC) -c $< -o $@
 
 %.cc.o: %.cc
-	$(CC) $(CC_FLAGS) $(CC_INC) -c $< -o $@
+	$(CC) $(CC_FLAGS) $(INC) -c $< -o $@
 
 # install: all
 # 	mkdir -p lib
 # 	cp $(TARGET) lib/$(TARGET)
 
 clean:
-	rm -f *.o *.a $(TARGET)
+	rm -f *.o $(TARGET)
