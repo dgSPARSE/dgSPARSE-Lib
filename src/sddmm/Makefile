@@ -1,10 +1,12 @@
 NVCC = nvcc
+OBJ_DIR = ../../objs
 SRCS = $(wildcard *.cu)
 OBJS = $(patsubst %cu, %o, $(SRCS))
 
 INCLUDE = -I/usr/local/cuda-11.1/include/ -I../../include/
 NVCC_FLAGS =\
 -O3  -lcusparse \
+-shared \
 -Xcompiler "-fPIC" \
 -gencode arch=compute_70,code=sm_70 \
 -gencode arch=compute_75,code=sm_75 \
@@ -19,11 +21,12 @@ TARGET := libsddmm.a
 all : $(TARGET)
 
 %.o:%.cu
-	$(NVCC) $(NVCCFLAGS) $(INCLUDE) -c $< -o $@
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDE) -c $< -o $@
 
 $(TARGET): $(OBJS)
 	ar cr $@ $^
 	ranlib $@
+	cp $^ $(OBJ_DIR)
 
 clean:
 	rm -f $(OBJS) $(TARGET)

@@ -1,5 +1,5 @@
 MODULE := src
-BASE_PATH := $(PWD)
+BASE_PATH := $(PWD)/$(MODULE)
 SUB_DIR := ge-spmm \
 	 	   sddmm \
 

@@ -1,29 +1,34 @@
 CC = gcc 
 TARGET := dgsparse.so
-SUB_DIR = src
-# LIBS := $(SUB_DIR)/ge-spmm/libgespmm.a  # $(SUB_DIR)/sddmm/libsddmm.a
-# LDFLAGS = $(LIBS)
+BASE_DIR = $(PWD)
+DIRS :=src
+OBJ_DIR := objs
+OBJS = $(wildcard $(OBJ_DIR)/*.o)
 RM = -rm -rf
 MAKE = make
-NVCC = nvcc
 
-CFLAGS := -Wall
-DEBUG = y
+CFLAGS := -Wall -shared -fPIC
+DEBUG = n
 ifeq ($(DEBUG), y)
 CFLAGS += -g
 else
 CFLAGS += -O2
 endif
 
-# $(TARGET): $(LIBS)
-# 	$(NVCC) -shared -o $@ $^
+INCLUDE = -I/usr/local/cuda/include/ -I../../include/
+LOADPATH = -L/usr/local/cuda/lib64
+LIBRARY = -lcudart
 
-DIRS:=src
 .PHONY: $(DIRS) clean
 
+$(TARGET): $(DIRS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LOADPATH) $(LIBRARY)
+	mv $@ lib/
+
 $(DIRS):
-	$(MAKE) -C $(DIRS);
+	mkdir -p $(OBJ_DIR)
+	$(MAKE) -C $(DIRS)
 
 clean:
 	$(MAKE) -C $(DIRS) clean
-	$(RM) $(TARGET)
+	$(RM) -rf $(TARGET) $(OBJ_DIR)

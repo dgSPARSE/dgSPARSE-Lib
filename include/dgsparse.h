@@ -1,5 +1,5 @@
-#ifndef SPMM_H
-#define SPMM_H
+#ifndef DGSPARSE_H
+#define DGSPARSE_H
 
 extern "C" {
 void spmm_cuda(int m, int k, int *rowptr, int *colind, float *values,
@@ -17,4 +17,4 @@ void sddmm_cuda_csr(int m, int k, int nnz, int *rowptr, int *colind, float *D1,
 void edge_softmax_cuda(int mrows, int head, int *rowptr, float *values,
                        float *softmax);
 }
-#endif // SPMM_H
+#endif // DGSPARSE_H
