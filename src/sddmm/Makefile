@@ -6,7 +6,7 @@ OBJS = $(patsubst %cu, %o, $(SRCS))
 INCLUDE = -I/usr/local/cuda-11.1/include/ -I../../include/
 NVCC_FLAGS =\
 -O3  -lcusparse \
--shared \
+-shared -std=c++11\
 -Xcompiler "-fPIC" \
 -gencode arch=compute_70,code=sm_70 \
 -gencode arch=compute_75,code=sm_75 \
