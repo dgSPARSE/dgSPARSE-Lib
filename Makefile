@@ -3,6 +3,7 @@ TARGET := dgsparse.so
 BASE_DIR = $(PWD)
 DIRS :=src
 OBJ_DIR := objs
+EXAMPLE_DIR := example
 OBJS = $(wildcard $(OBJ_DIR)/*.o)
 RM = -rm -rf
 MAKE = make
@@ -19,16 +20,20 @@ INCLUDE = -I/usr/local/cuda/include/ -I../../include/
 LOADPATH = -L/usr/local/cuda/lib64
 LIBRARY = -lcudart
 
-.PHONY: $(DIRS) clean
+.PHONY: exp code clean
 
-$(TARGET): $(DIRS)
+$(TARGET): code
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LOADPATH) $(LIBRARY)
 	mv $@ lib/
 
-$(DIRS):
+code:
 	mkdir -p $(OBJ_DIR)
 	$(MAKE) -C $(DIRS)
 
+exp: code
+	$(MAKE) -C $(EXAMPLE_DIR)
+
 clean:
 	$(MAKE) -C $(DIRS) clean
+	$(MAKE) -C $(EXAMPLE_DIR) clean
 	$(RM) -rf $(TARGET) $(OBJ_DIR)

@@ -1,14 +1,8 @@
 TARGET = libgespmm.a
 
 OBJ_DIR = ../../objs
-OBJS =\
-csrspmm_non_transpose.cu.o \
-csrspmm_parreduce.cu.o \
-csrspmm_rowcaching.cu.o \
-csrspmm_seqreduce.cu.o \
-gespmm_v2.cu.o \
-gespmm_csrcoo_v2.cu.o \
-gespmm.cc.o
+SRCS = $(wildcard *.cu) $(wildcard *.cc)
+OBJS = $(patsubst %cu, %cu.o, $(SRCS)) $(patsubst %cc, %cc.o, $(SRCS))
 
 NVCC = nvcc
 NVCC_FLAGS =\
