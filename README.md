@@ -5,17 +5,23 @@
 ## Introdution
 
 The dgSPARSE Library (Deep Graph Sparse Library) is a high performance library for sparse kernel acceleration on GPUs based on CUDA.
+
 ## File Structure
 
 ```
 .
-├── include: 
+├── include:
 │   └── dgsparse.h: The header file of the dgSPARSE Library.
 ├── lib:
 │   └── dgsparse.so: The dynamic link file of the dgSPARSE Library.
 └── src: Some source codes and references of implementations in the dgSPARSE Library.
     └── ge-spmm: GE-SpMM implementation.
 ```
+
+## Run Examples
+
+First build dgsparse through `make`.
+Then you could run our kernels in the example folder.
 
 ## Documentation
 
