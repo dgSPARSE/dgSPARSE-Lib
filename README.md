@@ -1,7 +1,7 @@
 # dgSPARSE Library
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
-[![Latest Release](https://img.shields.io/appveyor/build/dgsparse/dgsparse-library)](https://github.com/dgSPARSE/dgSPARSE-Library/releases/)
+[![Latest Release](https://img.shields.io/github/v/release/dgsparse/dgsparse-library)](https://github.com/dgSPARSE/dgSPARSE-Library/releases/)
 
 ## Introdution
 
