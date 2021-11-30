@@ -140,7 +140,6 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
   // get the sparse-value range of this row
   int global_warp_id = blockIdx.x * (blockDim.x >> 5) + warp_id;
   int nz_start = global_warp_id * (ThreadNz * 32);
-  int nz_end = min(nz_start + ThreadNz * 32, nnz);
 
   // get the dense column offset
   int col_offset = blockIdx.y * 32 * CoarsenFactor;
@@ -157,11 +156,15 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
   float c[CoarsenFactor] = {0.0f};
   int ldC = N;
 
+  int stride = gridDim.x * (blockDim.x >> 5) * ThreadNz * 32;
+
   if (blockIdx.y == gridDim.y - 1)
     goto Ndim_Residue;
 
+  for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
-  for (int tile_base = nz_start; tile_base < nz_end; tile_base += 32) {
+  for (int tile_base = nz_start; 
+    tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
 
     int thread_nz_id = tile_base + lane_id;
     if (thread_nz_id < nnz) {
@@ -215,14 +218,17 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
       atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
     }
   }
+  }
   return;
 
 Ndim_Residue:
 
   int valid_lane_num = CEIL(N - col_offset - lane_id, 32);
-
+  
+  for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
-  for (int tile_base = nz_start; tile_base < nz_end; tile_base += 32) {
+  for (int tile_base = nz_start; 
+    tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
 
     int thread_nz_id = tile_base + lane_id;
     if (thread_nz_id < nnz) {
@@ -285,6 +291,7 @@ Ndim_Residue:
         atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
       }
     }
+  }
   }
 }
 
