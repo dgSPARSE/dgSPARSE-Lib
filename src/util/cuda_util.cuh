@@ -2,7 +2,10 @@
 
 #pragma once
 
-#include "cuda.h"
+#include "device_launch_parameters.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
 
 /// heuristic choice of thread-block size
 const int RefThreadPerBlock = 256;

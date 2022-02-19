@@ -2,3 +2,4 @@
 *.out
 *.a
 objs
+__pycache__
