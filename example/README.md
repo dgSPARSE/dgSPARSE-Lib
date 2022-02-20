@@ -8,7 +8,7 @@ You could build the whole project once by the following code
 
 ```
 cd ..
-make
+make exp
 ```
 
 Or you could follow these steps to run spmm only.

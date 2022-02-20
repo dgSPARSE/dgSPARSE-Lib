@@ -80,16 +80,15 @@ template <typename Index, typename DType>
 void sddmm_reference_host(
     int M,   // number of S-rows, S is the sparse matrix
     int N,   // number of S_cols
-    int nnz, // number of nonzeros in S
-    int K,   // number of A columns
+    int K, // number of A columns
+    int nnz,  // number of nonzeros in S
 
-    const Index *csr_indptr, const int *csr_indices,
+    const Index *csr_indptr, const Index *csr_indices,
     const DType *csr_values, // three arrays of the sparse matrix's CSR format
     const DType *A,          // assume row-major
     const DType *B,          // assume row-major, assume transposed
     DType *C_ref)            // assume row-major
 {
-  fill_zero(C_ref, nnz);
   for (int i = 0; i < M; i++) {
     Index lb = csr_indptr[i];
     Index hb = csr_indptr[i + 1];

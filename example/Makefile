@@ -13,3 +13,4 @@ $(SUB_DIR):
 
 clean:
 	$(MAKE) -C $(BASE_PATH)/ge-spmm clean
+	$(MAKE) -C $(BASE_PATH)/sddmm clean

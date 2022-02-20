@@ -246,5 +246,10 @@ int main(int argc, const char **argv) {
   if (workspace)
     CUDA_CHECK(cudaFree(workspace));
 
+  // destroy matrix/vector descriptors
+  CUSPARSE_CHECK(cusparseDestroyDnMat(dnMatInputDescr));
+  CUSPARSE_CHECK(cusparseDestroyDnMat(dnMatOutputDescr));
+  CUSPARSE_CHECK(cusparseDestroySpMat(csrDescr));
+  CUSPARSE_CHECK(cusparseDestroy(handle));
   return EXIT_SUCCESS;
 }

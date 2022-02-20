@@ -221,3 +221,45 @@ __global__ void sddmm_csr_ebalance_scalar(const int S_mrows, int D_kcols,
     }
   }
 }
+
+__global__ void sddmm_csr_simple(const int S_mrows, int D_kcols,
+                                 const unsigned long Size, int *S_csrRowPtr,
+                                 int *S_csrColInd, float *D1_dnVal,
+                                 float *D2_dnVal, float *O_csrVal) {
+  int eid = blockIdx.x;
+  int cid = threadIdx.x;
+
+  float multi = 0;
+  int offset1, offset2;
+  float D1tmp, D2tmp;
+
+  offset2 = S_csrColInd[eid];
+
+  offset1 = binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows);
+
+  offset1 *= D_kcols;
+  offset2 *= D_kcols;
+
+  for (int i = 0; i < (D_kcols >> 5); i++) {
+    D1tmp = D1_dnVal[offset1 + cid];
+    D2tmp = D2_dnVal[offset2 + cid];
+    multi += D1tmp * D2tmp;
+    cid += 32;
+  }
+  int res = D_kcols & 31;
+  if (res) {
+    float D1 = 0, D2 = 0;
+    if (threadIdx.x < res) {
+      D1 = D1_dnVal[offset1 + cid];
+      D2 = D2_dnVal[offset2 + cid];
+      multi += D1 * D2;
+    }
+  }
+  for (int stride = 16; stride > 0; stride >>= 1) {
+    multi += __shfl_xor_sync(0xfffffff, multi, stride, 32);
+  }
+
+  if (threadIdx.x == 0) {
+    O_csrVal[eid] = multi;
+  }
+}
