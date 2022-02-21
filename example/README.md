@@ -59,3 +59,30 @@ Ignore original values and use randomly generated values.
 [GE-SpMM][Alg: 9] Report: spmm A(62586 x 62586) * B(62586 x 32) sparsity 0.000038 (nnz=147892)
  Time 0.044950 (ms), Throughput 210.568878 (gflops).
 ```
+
+## Steps to run a gspmm-fp example
+
+Make sure you have installed the requirements as follows:
+* torch >= 1.8.0
+* ninja
+* scipy
+
+**Step**
+Enter the example's folder:
+``` bash
+cd gspmm-fp 
+```
+Then you could run our example by 
+``` python
+python gspmm-exp.py [k]
+```
+Here k is the feature length of the input dense matrix.
+
+Example output (on RTX3090, cuda v11.2)
+
+```bash 
+Loading extension module spmm...
+running u_sub_e_sum our time is: 0.0004
+```
+
+Note here we use JIT, so it is normal to wait longer when compiling the project the first time.
