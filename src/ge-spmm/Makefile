@@ -27,7 +27,7 @@ $(TARGET) : $(OBJS)
 	ar cr $@ $^
 	ranlib $@
 	if [ ! -d $(OBJ_DIR) ]; then mkdir $(OBJ_DIR); else echo "folder exists"; fi 
-	cp $^ $(OBJ_DIR)
+	cp $(OBJS) $(OBJ_DIR)
 	
 %.cu.o: %.cu
 	$(NVCC) $(NVCC_FLAGS) $(INC) -c $< -o $@
