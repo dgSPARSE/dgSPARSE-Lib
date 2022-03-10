@@ -48,20 +48,21 @@ const int RefThreadPerBlock = 256;
 
 // This function finds the first element in seg_offsets greater than elem_id
 // (n^th) and output n-1 to seg_numbers[tid]
+
+
 template <typename index_t>
 __device__ __forceinline__ index_t
 binary_search_segment_number(const index_t *seg_offsets, const index_t n_seg,
                              const index_t n_elem, const index_t elem_id) {
-  index_t lo = 1, hi = n_seg, mid;
-  while (lo < hi) {
-    mid = (lo + hi) >> 1;
-    if (seg_offsets[mid] <= elem_id) {
-      lo = mid + 1;
-    } else {
-      hi = mid;
-    }
+  index_t head = n_elem;
+  index_t end = elem_id;
+  index_t mid = (head + end) >> 1;
+  for (; end - head > 1;) {
+    if (n_seg < seg_offsets[mid]) end = mid;
+    else head = mid;
+    mid = (head + end) >> 1;
   }
-  return (hi - 1);
+  return head;
 }
 
 // calculate the deviation of a matrix's row-length

@@ -1,7 +1,7 @@
 #include "../util/cuda_util.cuh"
 #include <cuda.h>
 
-__global__ void sddmm_csr_ebalance_vec4(int D_kcols, const int S_mrows,
+__global__ void sddmm_csr_ebalance_vec4(const int S_mrows, int D_kcols,
                                         const unsigned long Size,
                                         int *S_csrRowPtr, int *S_csrColInd,
                                         float *D1_dnVal, float *D2_dnVal,
@@ -17,12 +17,12 @@ __global__ void sddmm_csr_ebalance_vec4(int D_kcols, const int S_mrows,
     // Wait to be optimized
     offset1[0] =
         binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows);
-    offset1[3] = binary_search_segment_number<int>(
-        S_csrRowPtr, eid + 3, offset1[0], MIN(S_mrows, offset1[0] + 100));
+    offset1[3] = binary_search_segment_number<int>(S_csrRowPtr, eid + 3,
+                                                   offset1[0], S_mrows);
     offset1[1] = binary_search_segment_number<int>(S_csrRowPtr, eid + 1,
-                                                   offset1[0], offset1[3]);
+                                                   offset1[0], offset1[3] + 1);
     offset1[2] = binary_search_segment_number<int>(S_csrRowPtr, eid + 2,
-                                                   offset1[1], offset1[3]);
+                                                   offset1[1], offset1[3] + 1);
 
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
@@ -79,9 +79,9 @@ __global__ void sddmm_csr_ebalance_vec2(const int S_mrows, int D_kcols,
     offset1[3] = binary_search_segment_number<int>(S_csrRowPtr, eid + 3,
                                                    offset1[0], S_mrows);
     offset1[1] = binary_search_segment_number<int>(S_csrRowPtr, eid + 1,
-                                                   offset1[0], offset1[3]);
+                                                   offset1[0], offset1[3] + 1);
     offset1[2] = binary_search_segment_number<int>(S_csrRowPtr, eid + 2,
-                                                   offset1[1], offset1[3]);
+                                                   offset1[1], offset1[3] + 1);
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
@@ -162,9 +162,9 @@ __global__ void sddmm_csr_ebalance_scalar(const int S_mrows, int D_kcols,
     offset1[3] = binary_search_segment_number<int>(S_csrRowPtr, eid + 3,
                                                    offset1[0], S_mrows);
     offset1[1] = binary_search_segment_number<int>(S_csrRowPtr, eid + 1,
-                                                   offset1[0], offset1[3]);
+                                                   offset1[0], offset1[3] + 1);
     offset1[2] = binary_search_segment_number<int>(S_csrRowPtr, eid + 2,
-                                                   offset1[1], offset1[3]);
+                                                   offset1[1], offset1[3] + 1);
 
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
