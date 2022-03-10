@@ -1,7 +1,7 @@
 #include "../util/cuda_util.cuh"
 #include <cuda.h>
 
-__global__ void sddmm_coo_ebalance_vec4(int D_kcols, const unsigned long Size,
+__global__ void sddmm_coo_ebalance_vec4(int D_kcols, const int Size,
                                         int *S_cooRowInd, int *S_cooColInd,
                                         float *D1_dnVal, float *D2_dnVal,
                                         float *O_cooVal) {
@@ -72,7 +72,7 @@ __global__ void sddmm_coo_ebalance_vec4(int D_kcols, const unsigned long Size,
   }
 }
 
-__global__ void sddmm_coo_ebalance_vec2(int D_kcols, const unsigned long Size,
+__global__ void sddmm_coo_ebalance_vec2(int D_kcols, const int Size,
                                         int *S_cooRowInd, int *S_cooColInd,
                                         float *D1_dnVal, float *D2_dnVal,
                                         float *O_cooVal) {
@@ -143,7 +143,7 @@ __global__ void sddmm_coo_ebalance_vec2(int D_kcols, const unsigned long Size,
   }
 }
 
-__global__ void sddmm_coo_ebalance_scalar(int D_kcols, const unsigned long Size,
+__global__ void sddmm_coo_ebalance_scalar(int D_kcols, const int Size,
                                           int *S_cooRowInd, int *S_cooColInd,
                                           float *D1_dnVal, float *D2_dnVal,
                                           float *O_cooVal) {

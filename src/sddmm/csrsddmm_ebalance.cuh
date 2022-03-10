@@ -15,14 +15,10 @@ __global__ void sddmm_csr_ebalance_vec4(const int S_mrows, int D_kcols,
     float4 D1tmp[4], D2tmp[4];
     Load<int4, int>(offset2, S_csrColInd, eid);
     // Wait to be optimized
-    offset1[0] =
-        binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows);
-    offset1[3] = binary_search_segment_number<int>(S_csrRowPtr, eid + 3,
-                                                   offset1[0], S_mrows);
-    offset1[1] = binary_search_segment_number<int>(S_csrRowPtr, eid + 1,
-                                                   offset1[0], offset1[3] + 1);
-    offset1[2] = binary_search_segment_number<int>(S_csrRowPtr, eid + 2,
-                                                   offset1[1], offset1[3] + 1);
+    offset1[0] = findRow<int>(S_csrRowPtr, eid, 0, S_mrows);
+    offset1[3] = findRow<int>(S_csrRowPtr, eid + 3, offset1[0], S_mrows);
+    offset1[1] = findRow<int>(S_csrRowPtr, eid + 1, offset1[0], offset1[3] + 1);
+    offset1[2] = findRow<int>(S_csrRowPtr, eid + 2, offset1[1], offset1[3] + 1);
 
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
@@ -40,9 +36,7 @@ __global__ void sddmm_csr_ebalance_vec4(const int S_mrows, int D_kcols,
     }
   } else {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
-    int offset1 =
-        binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows) *
-        D_kcols;
+    int offset1 = findRow<int>(S_csrRowPtr, eid, 0, S_mrows) * D_kcols;
     int offset2 = S_csrColInd[eid] * D_kcols;
     float multi = 0;
     cid = threadIdx.x + (threadIdx.y << 3);
@@ -74,14 +68,10 @@ __global__ void sddmm_csr_ebalance_vec2(const int S_mrows, int D_kcols,
     int offset1[4], offset2[4];
     float2 D1tmp[4], D2tmp[4];
     Load<int4, int>(offset2, S_csrColInd, eid);
-    offset1[0] =
-        binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows);
-    offset1[3] = binary_search_segment_number<int>(S_csrRowPtr, eid + 3,
-                                                   offset1[0], S_mrows);
-    offset1[1] = binary_search_segment_number<int>(S_csrRowPtr, eid + 1,
-                                                   offset1[0], offset1[3] + 1);
-    offset1[2] = binary_search_segment_number<int>(S_csrRowPtr, eid + 2,
-                                                   offset1[1], offset1[3] + 1);
+    offset1[0] = findRow<int>(S_csrRowPtr, eid, 0, S_mrows);
+    offset1[3] = findRow<int>(S_csrRowPtr, eid + 3, offset1[0], S_mrows);
+    offset1[1] = findRow<int>(S_csrRowPtr, eid + 1, offset1[0], offset1[3] + 1);
+    offset1[2] = findRow<int>(S_csrRowPtr, eid + 2, offset1[1], offset1[3] + 1);
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
@@ -111,9 +101,7 @@ __global__ void sddmm_csr_ebalance_vec2(const int S_mrows, int D_kcols,
   } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
-    int offset1 =
-        binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows) *
-        D_kcols;
+    int offset1 = findRow<int>(S_csrRowPtr, eid, 0, S_mrows) * D_kcols;
     int offset2 = S_csrColInd[eid] * D_kcols;
     float multi = 0;
     int off1 = cid = (threadIdx.y << 4) + threadIdx.x;
@@ -157,14 +145,10 @@ __global__ void sddmm_csr_ebalance_scalar(const int S_mrows, int D_kcols,
 
     Load<int4, int>(offset2, S_csrColInd, eid);
 
-    offset1[0] =
-        binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows);
-    offset1[3] = binary_search_segment_number<int>(S_csrRowPtr, eid + 3,
-                                                   offset1[0], S_mrows);
-    offset1[1] = binary_search_segment_number<int>(S_csrRowPtr, eid + 1,
-                                                   offset1[0], offset1[3] + 1);
-    offset1[2] = binary_search_segment_number<int>(S_csrRowPtr, eid + 2,
-                                                   offset1[1], offset1[3] + 1);
+    offset1[0] = findRow<int>(S_csrRowPtr, eid, 0, S_mrows);
+    offset1[3] = findRow<int>(S_csrRowPtr, eid + 3, offset1[0], S_mrows);
+    offset1[1] = findRow<int>(S_csrRowPtr, eid + 1, offset1[0], offset1[3] + 1);
+    offset1[2] = findRow<int>(S_csrRowPtr, eid + 2, offset1[1], offset1[3] + 1);
 
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
@@ -191,9 +175,7 @@ __global__ void sddmm_csr_ebalance_scalar(const int S_mrows, int D_kcols,
   } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
-    int offset1 =
-        binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows) *
-        D_kcols;
+    int offset1 = findRow<int>(S_csrRowPtr, eid, 0, S_mrows) * D_kcols;
     int offset2 = S_csrColInd[eid] * D_kcols;
     float multi = 0;
     int off1 = cid = threadIdx.x;
@@ -235,7 +217,7 @@ __global__ void sddmm_csr_simple(const int S_mrows, int D_kcols,
 
   offset2 = S_csrColInd[eid];
 
-  offset1 = binary_search_segment_number<int>(S_csrRowPtr, eid, 0, S_mrows);
+  offset1 = findRow<int>(S_csrRowPtr, eid, 0, S_mrows);
 
   offset1 *= D_kcols;
   offset2 *= D_kcols;
