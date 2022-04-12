@@ -2,12 +2,16 @@ all: spmm.out
 
 PROJ_DIR=../../src/ge-spmm
 LIB = $(PROJ_DIR)/libgespmm.a
+SO = ../../lib/dgsparse.so
 
-spmm.out: spmm.cu.o $(LIB)
-	nvcc -I$(PROJ_DIR) -lcusparse -o $@ $^
+INC = -I$(CUDA_HOME)/include
+LOADPATH = -L$(CUDA_HOME)/lib64
 
-%.o: %.cc
-	nvcc -std=c++11 -I/usr/local/cuda/include -I$(PROJ_DIR) -c $< 
+spmm.out: spmm.o $(LIB)
+	nvcc -I$(PROJ_DIR) $(INC) $(LOADPATH) -lcusparse -o $@ $^
+
+%.o: %.cu
+	nvcc -std=c++11 $(INC) -I$(PROJ_DIR) -c $< 
 
 clean:
-	rm -f spmm.out spmm.cu.o
+	rm -f *.out *.o

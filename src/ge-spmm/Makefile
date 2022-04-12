@@ -6,7 +6,7 @@ OBJS = $(patsubst %cu, %cu.o, $(SRCS)) $(patsubst %cc, %cc.o, $(SRCS))
 
 NVCC = nvcc
 NVCC_FLAGS =\
--O3  -lcusparse \
+-O3  -lcusparse -lcudart \
 -shared -std=c++11\
 -Xcompiler "-fPIC" \
 -gencode arch=compute_70,code=sm_70 \
@@ -16,7 +16,8 @@ NVCC_FLAGS =\
 
 CC = g++
 CC_FLAGS = -O2 -Wall -std=c++11 -fPIC
-INC = -I/usr/local/cuda/include -I../../include/
+INC = -I$(CUDA_HOME)/include -I../../include/
+
 
 all: $(TARGET)
 

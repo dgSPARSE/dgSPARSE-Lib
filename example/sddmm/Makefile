@@ -3,11 +3,14 @@ all: sddmm.out
 PROJ_DIR=../../src/sddmm
 LIB = $(PROJ_DIR)/libsddmm.a
 
-sddmm.out: sddmm.cu.o $(LIB)
-	nvcc -I$(PROJ_DIR) -lcusparse -o $@ $^
+INC = -I$(CUDA_HOME)/include
+LOADPATH = -L$(CUDA_HOME)/lib64
 
-%.o: %.cc
-	nvcc -std=c++11 -I/usr/local/cuda/include -I$(PROJ_DIR) -c $< 
+sddmm.out: sddmm.o $(LIB)
+	nvcc -I$(PROJ_DIR) $(INC) $(LOADPATH) -lcusparse -o $@ $^
+
+%.o: %.cu
+	nvcc -std=c++11 $(INC) -I$(PROJ_DIR) -c $< 
 
 clean:
-	rm -f sddmm.out sddmm.cu.o
+	rm -f sddmm.out sddmm.o

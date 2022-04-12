@@ -16,14 +16,14 @@ else
 CFLAGS += -O2
 endif
 
-INCLUDE = -I/usr/local/cuda/include/ -I../../include/
-LOADPATH = -L/usr/local/cuda/lib64
+INCLUDE = -I$(CUDA_HOME)/include -I../../include/
+LOADPATH = -L$(CUDA_HOME)/lib64
 LIBRARY = -lcudart
 
 .PHONY: exp code clean
 
 $(TARGET): code
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LOADPATH) $(LIBRARY)
+	$(CC) $(CFLAGS) $(INCLUDE) -o $@ $(OBJS) $(LOADPATH) $(LIBRARY)
 	mv $@ lib/
 
 code:
