@@ -21,8 +21,14 @@ The dgSPARSE Library (Deep Graph Sparse Library) is a high performance library f
 
 ## Run Examples
 
-First build dgsparse through `make`.
-Then you could run our kernels in the example folder.
+Check your environment.
+``` bash
+export CUDA_HOME=/usr/local/cuda # your cuda path
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64
+```
+
+Then build dgsparse through `make exp`.
+You could run our kernels in the example folder.
 
 ## Documentation
 
