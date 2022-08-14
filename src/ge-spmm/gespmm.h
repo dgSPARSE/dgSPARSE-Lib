@@ -81,6 +81,6 @@ void csrspmm_seqreduce_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
 void csrspmm_rowcaching_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
                                    const int N, float *C);
 void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
-                                   const int N, float *C);
+                                   const int N, float *C, const int group_factor, const float block_factor);
 }
 #endif // GESPMM_H

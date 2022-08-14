@@ -76,7 +76,7 @@ void gespmmCsrSpMM( const SpMatCsrDescr_t spmatA,
                 case GESPMM_ALG_ROWCACHING_ROWBALANCE:
                     csrspmm_rowcaching_rowbalance(spmatA, B, N, C); break;
                 case GESPMM_ALG_ROWCACHING_NNZBALANCE:
-                    csrspmm_rowcaching_nnzbalance(spmatA, B, N, C); break;
+                    csrspmm_rowcaching_nnzbalance(spmatA, B, N, C, 4, 1/16); break;
                 default:
                     std::cerr << "Unknown algorithm\n";
                     exit(EXIT_FAILURE);

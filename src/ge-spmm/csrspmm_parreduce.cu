@@ -299,6 +299,12 @@ void csrspmm_parreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
     case 3: csrspmm_parreduce_rowbalance_kernel<float4, 8>
     <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
                             spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 4: csrspmm_parreduce_rowbalance_kernel<float4, 16>
+        <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                                spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 5: csrspmm_parreduce_rowbalance_kernel<float4, 32>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
     }
   } else if (coarsen_factor == 2) {
     switch(group_factor)
@@ -309,6 +315,12 @@ void csrspmm_parreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
     case 3: csrspmm_parreduce_rowbalance_kernel<float2, 8>
     <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
                             spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 4: csrspmm_parreduce_rowbalance_kernel<float2, 16>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 5: csrspmm_parreduce_rowbalance_kernel<float2, 32>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
     }
   } else {
     switch(group_factor)
@@ -317,6 +329,12 @@ void csrspmm_parreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
         <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
                                 spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
     case 3: csrspmm_parreduce_rowbalance_kernel<float, 8>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 4: csrspmm_parreduce_rowbalance_kernel<float, 16>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 5: csrspmm_parreduce_rowbalance_kernel<float, 32>
     <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
                             spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
     }
