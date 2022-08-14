@@ -7,7 +7,6 @@
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
 
-
 /// heuristic choice of thread-block size
 const int RefThreadPerBlock = 256;
 
