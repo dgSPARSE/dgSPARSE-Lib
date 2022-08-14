@@ -3,28 +3,31 @@
 
 #include "../util/cuda_util.cuh"
 #include "gespmm.h"
-
+#include <cooperative_groups.h>
+using namespace cooperative_groups;
 // Parallel-reduction algorithm assigns a warp to a non-zero segment
 //   and use primitives like parallel-reduction / parallel-scan
 //   to compute SpMM.
 
-template <typename access_t>
+template <typename access_t, int group_size>
 __global__ void csrspmm_parreduce_rowbalance_kernel(
     const int M, const int N, const int K, const int csr_indptr[],
     const int csr_indices[], const float csr_data[], const float B[],
-    float C[]) {
+    float C[], const int tile_size) {
   constexpr int CoarsenFactor = sizeof(access_t) / sizeof(float);
 
-  int lane_id = (threadIdx.x & (32 - 1));
+  int lane_id = (threadIdx.x & (tile_size - 1));
   int stride = gridDim.x * blockDim.y;
   int row = blockIdx.x * blockDim.y + threadIdx.y;
 
   // get the dense column offset
-  int col_offset = blockIdx.y * 32 + (threadIdx.x >> 5) * CoarsenFactor;
+  int col_offset = blockIdx.y * tile_size + (threadIdx.x / tile_size) * CoarsenFactor;
   const float *B_panel = B + col_offset;
   float *C_panel = C + col_offset;
   int ldB = N;
   int ldC = N;
+  // The largest group_size is 32
+  thread_block_tile<group_size,thread_block> group = tiled_partition<group_size>(this_thread_block());
 
   if (col_offset >= N)
     return;
@@ -53,16 +56,18 @@ __global__ void csrspmm_parreduce_rowbalance_kernel(
         c[i] += v * buffer[i];
       }
     }
-
 #pragma unroll
     for (int i = 0; i < CoarsenFactor; i++) {
-      // row-wise reduction is a simple merge-tree
-      SHFL_DOWN_REDUCE(c[i])
+      for (int k = group.size()>>1 ; k>0; k = k >> 1) {
+        c[i] += group.shfl_down(c[i], k);
+      }
     }
-
-    // store to C in vector-type
-    if (lane_id == 0) {
-      *(access_t *)(C_panel + row * ldC) = *(access_t *)c;
+    if (group.thread_rank() == 0) {
+    // atomic add has no vector-type form.
+#pragma unroll
+      for (int i = 0; i < CoarsenFactor; i++) {
+        atomicAdd(C_panel + row * ldC + i, c[i]);
+      }
     }
   }
   return;
@@ -81,7 +86,7 @@ Ndim_Residue:
     int k;
     float v;
 
-    for (int jj = start + lane_id; jj < end; jj += 32) {
+    for (int jj = start + lane_id; jj < end; jj += tile_size) {
       k = csr_indices[jj];
       v = __guard_load_default_one<float>(csr_data, jj);
 
@@ -100,14 +105,16 @@ Ndim_Residue:
 
 #pragma unroll
     for (int i = 0; i < CoarsenFactor; i++) {
-      SHFL_DOWN_REDUCE(c[i])
+      for (int k = group.size()>>1 ; k>0; k = k >> 1) {
+        c[i] += group.shfl_down(c[i], k);
+      }
     }
 
-    if (lane_id == 0) {
+    if (group.thread_rank() == 0) {
 #pragma unroll
       for (int i = 0; i < CoarsenFactor; i++) {
         if (i < valid_lane_num) {
-          C_panel[row * ldC + i] = c[i];
+          atomicAdd(C_panel + row * ldC + i, c[i]);
         }
       }
     }
@@ -263,38 +270,56 @@ Ndim_Residue:
   }
   return;
 }
-
 void csrspmm_parreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
-                                  const int N, float *C) {
+  const int N, float *C, const int group_factor, const int tile_factor, const int block_factor) {
   // factor of thread coarsening
   int coarsen_factor = (N % 4 == 0) ? 4 : (N % 2 == 0) ? 2 : 1;
   // number of parallel warps along M-dimension
-  int Mdim_worker = spmatA.nrow;
+  int Mdim_worker = (float)spmatA.nrow * block_factor;
   // partition large-N and map to blockdim.y to help cache performance
-  int Ndim_threadblock = CEIL(N, 32);
-  int Ndim_warp_per_tb = min(N, 32) / coarsen_factor;
+  int tile_size = 1<<tile_factor;
+  int Ndim_threadblock = CEIL(N, tile_size);
+  int Ndim_warp_per_tb = min(N, tile_size) / coarsen_factor;
 
-  int ref_warp_per_tb = RefThreadPerBlock / 32;
+  int ref_warp_per_tb = RefThreadPerBlock / tile_size;
   int Mdim_warp_per_tb = CEIL(ref_warp_per_tb, Ndim_warp_per_tb);
 
   // total number of warps
   int gridDimX = CEIL(Mdim_worker, Mdim_warp_per_tb);
   int gridDimY = Ndim_threadblock;
   dim3 gridDim(gridDimX, gridDimY, 1);
-  dim3 blockDim(Ndim_warp_per_tb * 32, Mdim_warp_per_tb, 1);
+  dim3 blockDim(Ndim_warp_per_tb * tile_size, Mdim_warp_per_tb, 1);
 
   if (coarsen_factor == 4) {
-    csrspmm_parreduce_rowbalance_kernel<float4>
+    switch(group_factor)
+    {
+    case 2: csrspmm_parreduce_rowbalance_kernel<float4, 4>
         <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
-                                spmatA.indices, spmatA.data, B, C);
+                                spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 3: csrspmm_parreduce_rowbalance_kernel<float4, 8>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    }
   } else if (coarsen_factor == 2) {
-    csrspmm_parreduce_rowbalance_kernel<float2>
+    switch(group_factor)
+    {
+    case 2: csrspmm_parreduce_rowbalance_kernel<float2, 4>
         <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
-                                spmatA.indices, spmatA.data, B, C);
+                                spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 3: csrspmm_parreduce_rowbalance_kernel<float2, 8>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    }
   } else {
-    csrspmm_parreduce_rowbalance_kernel<float>
+    switch(group_factor)
+    {
+    case 2: csrspmm_parreduce_rowbalance_kernel<float, 4>
         <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
-                                spmatA.indices, spmatA.data, B, C);
+                                spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    case 3: csrspmm_parreduce_rowbalance_kernel<float, 8>
+    <<<gridDim, blockDim>>>(spmatA.nrow, N, spmatA.ncol, spmatA.indptr,
+                            spmatA.indices, spmatA.data, B, C, 1<<tile_factor);break;
+    }
   }
 }
 
