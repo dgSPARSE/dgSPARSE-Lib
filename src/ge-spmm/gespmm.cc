@@ -68,7 +68,7 @@ void gespmmCsrSpMM( const SpMatCsrDescr_t spmatA,
                 case GESPMM_ALG_PARREDUCE_ROWBALANCE:
                     csrspmm_parreduce_rowbalance(spmatA, B, N, C, 3, 3, 0.5); break;
                 case GESPMM_ALG_PARREDUCE_NNZBALANCE:
-                    csrspmm_parreduce_nnzbalance(spmatA, B, N, C); break;
+                    csrspmm_parreduce_nnzbalance(spmatA, B, N, C, 5, 5, 1/8); break;
                 case GESPMM_ALG_SEQREDUCE_ROWBALANCE:
                     csrspmm_seqreduce_rowbalance(spmatA, B, N, C); break;
                 case GESPMM_ALG_SEQREDUCE_NNZBALANCE:
