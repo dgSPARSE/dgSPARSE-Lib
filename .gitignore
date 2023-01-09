@@ -2,4 +2,9 @@
 *.out
 *.a
 objs
+*.so
 __pycache__
+dist
+*.egg-info
+build/
+.pytest_cache
