@@ -1,13 +1,14 @@
-#include "kernel.h"
-#include "../../include/cuda/cuda_util.cuh"
-#include "../../include/cuda/spmm_cuda.cuh"
-#include "../../include/cuda/sddmm_cuda.cuh"
 #include "../../include/cuda/csr2csc.cuh"
-#include <iostream>
+#include "../../include/cuda/cuda_util.cuh"
+#include "../../include/cuda/sddmm_cuda.cuh"
+#include "../../include/cuda/spmm_cuda.cuh"
+#include "kernel.h"
 #include <c10/cuda/CUDAGuard.h>
+#include <iostream>
 
 torch::Tensor spmm_cuda(torch::Tensor csrptr, torch::Tensor indices,
-                        torch::Tensor edge_val, torch::Tensor in_feat) {
+                        torch::Tensor edge_val, torch::Tensor in_feat,
+                        bool has_value) {
   //   assertTensor(csrptr, torch::kInt32);
   //   assertTensor(indices, torch::kInt32);
   //   assertTensor(in_feat, torch::kFloat32);
@@ -32,10 +33,16 @@ torch::Tensor spmm_cuda(torch::Tensor csrptr, torch::Tensor indices,
 
   auto out_feat = torch::empty({v, f}, options);
 
-  csrspmm_rowbalance_kernel<<<gridDim, blockDim>>>(
-      Mdim_worker, Ndim_worker, csrptr.data_ptr<int>(), indices.data_ptr<int>(),
-      edge_val.data_ptr<float>(), in_feat.data_ptr<float>(),
-      out_feat.data_ptr<float>());
+  if (has_value)
+    csrspmm_rowbalance_kernel<<<gridDim, blockDim>>>(
+        Mdim_worker, Ndim_worker, csrptr.data_ptr<int>(),
+        indices.data_ptr<int>(), edge_val.data_ptr<float>(),
+        in_feat.data_ptr<float>(), out_feat.data_ptr<float>());
+  else
+    csrspmm_rowbalance_kernel<<<gridDim, blockDim>>>(
+        Mdim_worker, Ndim_worker, csrptr.data_ptr<int>(),
+        indices.data_ptr<int>(), (float*) nullptr,
+        in_feat.data_ptr<float>(), out_feat.data_ptr<float>());
 
   return out_feat;
 }

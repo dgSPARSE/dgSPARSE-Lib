@@ -17,7 +17,7 @@ public:
                                torch::Tensor rowptr, torch::Tensor col,
                                torch::Tensor values, torch::Tensor dense,
                                bool has_value) {
-    auto out = spmm_cuda(rowptr, col, values, dense);
+    auto out = spmm_cuda(rowptr, col, values, dense, has_value);
     ctx->saved_data["has_value"] = has_value;
     ctx->save_for_backward({rowptr, col, values, dense});
     return out;
@@ -47,7 +47,7 @@ public:
       colptr = ten_vec[0];
       row = ten_vec[1];
       t_values = ten_vec[2];
-      grad_mat = spmm_cuda(colptr, row, t_values, grad_out);
+      grad_mat = spmm_cuda(colptr, row, t_values, grad_out, has_value);
     }
     return {torch::Tensor(), torch::Tensor(), grad_value, grad_mat,
             torch::Tensor()};
@@ -60,5 +60,19 @@ torch::Tensor spmm_sum(torch::Tensor rowptr, torch::Tensor col,
                        bool has_value) {
   return SpMMSum::apply(rowptr, col, values, dense, has_value);
 }
+
+/*
+[TO DO]
+
+class SpMMMin : public torch::autograd::Function<SpMMMin>
+
+class SpMMMax : public torch::autograd::Function<SpMMMax>
+
+class SpMMMin : public torch::autograd::Function<SpMMMin>
+
+class SpMMMean : public torch::autograd::Function<SpMMMean>
+
+
+*/
 
 TORCH_LIBRARY(dgsparse, m) { m.def("spmm_sum", &spmm_sum); }

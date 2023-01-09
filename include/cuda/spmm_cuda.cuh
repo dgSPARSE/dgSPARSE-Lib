@@ -3,6 +3,7 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include "cuda_util.cuh"
 
 template <typename Index, typename DType>
 __global__ void
@@ -24,7 +25,7 @@ csrspmm_rowbalance_kernel(const Index nr, const Index feature_size,
     Index end = __ldg(rowPtr + row + 1);
     for (Index p = start; p < end; p++) {
       col = __ldg(colIdx + p);
-      val = __ldg(values + p);
+      val = __guard_load_default_one<DType>(values, p);
       res += val * __ldg(dnInput + col * feature_size);
     }
     dnOutput[row * feature_size] = res;

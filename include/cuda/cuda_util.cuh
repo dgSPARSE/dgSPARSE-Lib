@@ -34,6 +34,16 @@ __device__ __forceinline__ float sum_reduce(float acc, float x) {
   return acc + x;
 }
 
+
+template <typename T>
+__device__ __forceinline__ T __guard_load_default_one(const T *base,
+                                                      int offset) {
+  if (base != nullptr)
+    return base[offset];
+  else
+    return static_cast<T>(1);
+}
+
 __device__ __forceinline__ float sum_init() { return 0; }
 
 __device__ __forceinline__ int findRow(const int *S_csrRowPtr, int eid,

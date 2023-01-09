@@ -1,7 +1,7 @@
 #include <torch/extension.h>
 
 torch::Tensor spmm_cuda(torch::Tensor csrptr, torch::Tensor indices,
-                        torch::Tensor edge_val, torch::Tensor in_feat);
+                        torch::Tensor edge_val, torch::Tensor in_feat, bool has_value);
 
 
 torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
