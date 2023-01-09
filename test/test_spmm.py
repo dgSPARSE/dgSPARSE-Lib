@@ -3,6 +3,7 @@ from torch import nn
 import os
 from scipy.io import mmread
 from dgsparse import spmm_sum
+from dgsparse import SparseTensor
 
 
 class SpMM():
@@ -11,13 +12,14 @@ class SpMM():
         rowptr = torch.from_numpy(sparsecsr.indptr).to(device).int()
         colind = torch.from_numpy(sparsecsr.indices).to(device).int()
         weight = torch.from_numpy(sparsecsr.data).to(device).float()
-        self.csr = torch.sparse_csr_tensor(rowptr, colind, weight, dtype=torch.float)
+        self.tcsr = torch.sparse_csr_tensor(rowptr, colind, weight, dtype=torch.float)
+        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(self.tcsr, True)
         nodes = rowptr.size(0) - 1
         self.input_feature = torch.rand((nodes, in_dim)).to(device)
 
     def calculate(self):
-        out_check = torch.sparse.mm(self.csr, self.input_feature)
-        out = spmm_sum(self.csr, self.input_feature)
+        out_check = torch.sparse.mm(self.tcsr, self.input_feature)
+        out = spmm_sum(self.dcsr, self.input_feature)
         assert(torch.allclose(out, out_check), True)
 
 

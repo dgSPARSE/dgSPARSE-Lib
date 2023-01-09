@@ -36,8 +36,12 @@ if torch.version.cuda is not None and cuda_version != -1:  # pragma: no cover
             f'matches your PyTorch install.')
 
 from .spmm import spmm_sum  # noqa
+from .storage import Storage
+from .tensor import SparseTensor
 # from .tensor import SparseTensor
 
 __all__ = [
-    'spmm', 'tensor'
+    'spmm_sum',
+    'Storage',
+    'SparseTensor'
 ]
