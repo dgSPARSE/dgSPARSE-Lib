@@ -6,9 +6,9 @@ from dgsparse import spmm_sum
 from dgsparse import SparseTensor
 
 
-class SpMM():
+class SpMM:
     def __init__(self, path, in_dim, device) -> None:
-        sparsecsr = mmread(path).astype('float32').tocsr()
+        sparsecsr = mmread(path).astype("float32").tocsr()
         rowptr = torch.from_numpy(sparsecsr.indptr).to(device).int()
         colind = torch.from_numpy(sparsecsr.indices).to(device).int()
         weight = torch.from_numpy(sparsecsr.data).to(device).float()
@@ -20,7 +20,7 @@ class SpMM():
     def calculate(self):
         out_check = torch.sparse.mm(self.tcsr, self.input_feature)
         out = spmm_sum(self.dcsr, self.input_feature)
-        assert(torch.allclose(out, out_check), True)
+        assert (torch.allclose(out, out_check), True)
 
 
 def test_spmm():

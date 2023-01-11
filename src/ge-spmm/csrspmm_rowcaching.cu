@@ -164,7 +164,7 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
 
   for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
-  for (int tile_base = nz_start; 
+  for (int tile_base = nz_start;
     tile_base < min(nz_start + ThreadNz * group_size, nnz); tile_base += group_size) {
 
     int thread_nz_id = tile_base + lane_id;
@@ -225,10 +225,10 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
 Ndim_Residue:
 
   int valid_lane_num = CEIL(N - col_offset - lane_id, group_size);
-  
+
   for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
-  for (int tile_base = nz_start; 
+  for (int tile_base = nz_start;
     tile_base < min(nz_start + ThreadNz * group_size, nnz); tile_base += group_size) {
 
     int thread_nz_id = tile_base + lane_id;
@@ -377,9 +377,9 @@ void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
       <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
                                         spmatA.nnz, spmatA.indptr,
                                         spmatA.indices, spmatA.data, B, C);break;
-      }      
+      }
     }
-    
+
   } else if (coarsen_factor == 2) {
     if (thread_nz == 1) {
       switch(group_factor) {
@@ -419,7 +419,7 @@ void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
       <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
                                         spmatA.nnz, spmatA.indptr,
                                         spmatA.indices, spmatA.data, B, C);break;
-      }      
+      }
     }
   } else {
     if (thread_nz == 1) {
@@ -460,7 +460,7 @@ void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
       <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
                                         spmatA.nnz, spmatA.indptr,
                                         spmatA.indices, spmatA.data, B, C);break;
-      }      
+      }
     }
   }
 }

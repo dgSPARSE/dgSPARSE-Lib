@@ -16,7 +16,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 k = int(sys.argv[1])
 
-sparsecsr = mmread(sparsePath).tocsc().astype('float32')
+sparsecsr = mmread(sparsePath).tocsc().astype("float32")
 
 rowptr = torch.from_numpy(sparsecsr.indptr).to(device).int()
 colind = torch.from_numpy(sparsecsr.indices).to(device).int()
@@ -30,5 +30,5 @@ a = time.time()
 ue = util.u_sub_e_sum(rowptr, colind, edge_feature, node_feature)
 torch.cuda.synchronize()
 b = time.time()
-time_our_ue = b-a
+time_our_ue = b - a
 print(f"running u_sub_e_sum our time is: {time_our_ue:.4f}")

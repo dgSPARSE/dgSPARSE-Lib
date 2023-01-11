@@ -3,6 +3,7 @@ from typing import Optional, List, Tuple
 
 import torch
 
+
 @torch.jit.script
 class Storage(object):
     _row: Optional[torch.Tensor]
@@ -65,4 +66,3 @@ class Storage(object):
         row = torch.tensor([], dtype=torch.int)
         col = torch.tensor([], dtype=torch.int)
         return Storage(row=row, rowptr=None, col=col, values=None)
-
