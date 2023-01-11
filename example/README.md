@@ -70,9 +70,9 @@ Make sure you have installed the requirements as follows:
 **Step**
 Enter the example's folder:
 ``` bash
-cd gspmm-fp 
+cd gspmm-fp
 ```
-Then you could run our example by 
+Then you could run our example by
 ``` python
 python gspmm-exp.py [k]
 ```
@@ -80,7 +80,7 @@ Here k is the feature length of the input dense matrix.
 
 Example output (on RTX3090, cuda v11.2)
 
-```bash 
+```bash
 Loading extension module spmm...
 running u_sub_e_sum our time is: 0.0004
 ```

@@ -8,8 +8,8 @@
 
 //
 // most-simple algorithm selector
-// 
-gespmmAlg_t gespmmAlgSel(int dense_ncol, bool transpose_BC) 
+//
+gespmmAlg_t gespmmAlgSel(int dense_ncol, bool transpose_BC)
 {
 if (transpose_BC) {
     if (dense_ncol >= 32)    return GESPMM_ALG_ROWCACHING_ROWBALANCE;
@@ -40,21 +40,21 @@ void gespmmCsrSpMM( const SpMatCsrDescr_t spmatA,
     // optimized kernel for 2^n cases
     if (transpose_BC && (N <= 32 && (N & (N-1))==0)) {
         switch(alg) {
-            case GESPMM_ALG_PARREDUCE_ROWBALANCE: 
+            case GESPMM_ALG_PARREDUCE_ROWBALANCE:
             case GESPMM_ALG_ROWCACHING_ROWBALANCE:
-                cuda_csr_coo_spmm(ALG_CSR_VECTOR, DENSE_ROW_MAJOR, spmatA.nrow, 
-                spmatA.ncol, spmatA.nnz, N, spmatA.indptr, nullptr, spmatA.indices, 
+                cuda_csr_coo_spmm(ALG_CSR_VECTOR, DENSE_ROW_MAJOR, spmatA.nrow,
+                spmatA.ncol, spmatA.nnz, N, spmatA.indptr, nullptr, spmatA.indices,
                 spmatA.data, B, C); break;
             case GESPMM_ALG_PARREDUCE_NNZBALANCE:
-                cuda_csr_spmm(3, 1, spmatA.nrow, spmatA.ncol, N, spmatA.nnz, 
+                cuda_csr_spmm(3, 1, spmatA.nrow, spmatA.ncol, N, spmatA.nnz,
                 spmatA.indptr, spmatA.indices, spmatA.data, B, C); break;
             case GESPMM_ALG_SEQREDUCE_ROWBALANCE:
             case GESPMM_ALG_ROWCACHING_NNZBALANCE:
-                cuda_csr_coo_spmm(ALG_CSR_SCALAR, DENSE_ROW_MAJOR, spmatA.nrow, 
-                spmatA.ncol,spmatA.nnz, N, spmatA.indptr, nullptr, spmatA.indices, 
+                cuda_csr_coo_spmm(ALG_CSR_SCALAR, DENSE_ROW_MAJOR, spmatA.nrow,
+                spmatA.ncol,spmatA.nnz, N, spmatA.indptr, nullptr, spmatA.indices,
                 spmatA.data, B, C); break;
             case GESPMM_ALG_SEQREDUCE_NNZBALANCE:
-                cuda_csr_spmm(2, 1, spmatA.nrow, spmatA.ncol, N, spmatA.nnz, 
+                cuda_csr_spmm(2, 1, spmatA.nrow, spmatA.ncol, N, spmatA.nnz,
                 spmatA.indptr, spmatA.indices, spmatA.data, B, C); break;
             default:
                 std::cerr << "Unknown algorithm\n";
@@ -96,14 +96,14 @@ void gespmmCsrSpMM( const SpMatCsrDescr_t spmatA,
                 default:
                     std::cerr << "Unknown algorithm\n";
                     exit(EXIT_FAILURE);
-            }    
+            }
         }
     }
 }
 
 // assumes row-major B, C
 void spmm_cuda(
-    int nrowA, 
+    int nrowA,
     int ncolB,
     int *rowptr,
     int *colind,
@@ -115,24 +115,24 @@ void spmm_cuda(
                       (ncolB >  4) ? GESPMM_ALG_SEQREDUCE_ROWBALANCE  :
                                      GESPMM_ALG_PARREDUCE_ROWBALANCE;
     SpMatCsrDescr_t matA = {nrowA,      // number of A rows
-                            0,      // A column-number is dummy in row-balance algorithms 
+                            0,      // A column-number is dummy in row-balance algorithms
                             -1,      // A nnz is dummy in row-balance algorithms
                             rowptr,  // three arrays of A's CSR format
                             colind,
-                            values 
+                            values
                             };
-                                  
+
     gespmmCsrSpMM(  matA,
                     dense,
                     ncolB,
                     out,
                     true, // transpose_BC
-                    alg 
+                    alg
                 );
 }
 
 void spmm_cuda_no_edge_value(
-    int nrowA, 
+    int nrowA,
     int ncolB,
     int *rowptr,
     int *colind,
@@ -145,7 +145,7 @@ void spmm_cuda_no_edge_value(
 
 // // new dgSparse API
 // void spmm_cuda(
-//     int nrowA, 
+//     int nrowA,
 //     int ncolA,
 //     int ncolB,
 //     int nnzA,
@@ -166,27 +166,27 @@ void spmm_cuda_no_edge_value(
 //         alg = GESPMM_ALG_PARREDUCE_ROWBALANCE_NON_TRANSPOSE;
 //     }
 
-//     SpMatCsrDescr_t matA = {nrowA,  
-//                             ncolA,   
-//                             nnzA, 
+//     SpMatCsrDescr_t matA = {nrowA,
+//                             ncolA,
+//                             nnzA,
 //                             rowptr,  // three arrays of A's CSR format˜
 //                             colind,
-//                             values 
+//                             values
 //                             };
-                                  
+
 //     gespmmCsrSpMM(  matA,
 //                     dense,
 //                     ncolB,
 //                     out,
 //                     transpose_BC,
-//                     alg 
+//                     alg
 //                 );
 // }
 
 
 
 // // SR_RB_RM
-// void spmm_cuda_alg0(int m, 
+// void spmm_cuda_alg0(int m,
 //                 int k,
 //                 int *rowptr,
 //                 int *colind,
@@ -196,7 +196,7 @@ void spmm_cuda_no_edge_value(
 // {
 //     if (k<=32 && (k & (k-1))==0) {
 //         // 1,2,4,8,16,32
-//         cuda_csr_coo_spmm(ALG_CSR_SCALAR, DENSE_ROW_MAJOR, 
+//         cuda_csr_coo_spmm(ALG_CSR_SCALAR, DENSE_ROW_MAJOR,
 //         m, /*dummy*/0, /*dummy*/0, k, rowptr, /*dummy*/nullptr,
 //         colind, values, dense, out);
 //     }
@@ -205,12 +205,12 @@ void spmm_cuda_no_edge_value(
 //                                     GESPMM_ALG_SEQREDUCE_ROWBALANCE);
 
 //         SpMatCsrDescr_t matA = {m, 0, 0, rowptr, colind, values};
-//         gespmmCsrSpMM( matA, dense, k, out, true, alg);  
-//     } 
+//         gespmmCsrSpMM( matA, dense, k, out, true, alg);
+//     }
 // }
 
 // // PR_RB_RM
-// void spmm_cuda_alg1(int m, 
+// void spmm_cuda_alg1(int m,
 //                 int k,
 //                 int *rowptr,
 //                 int *colind,
@@ -220,7 +220,7 @@ void spmm_cuda_no_edge_value(
 // {
 //     if (k<=32 && (k & (k-1))==0) {
 //         // 1,2,4,8,16,32
-//         cuda_csr_coo_spmm(ALG_CSR_VECTOR, DENSE_ROW_MAJOR, 
+//         cuda_csr_coo_spmm(ALG_CSR_VECTOR, DENSE_ROW_MAJOR,
 //         m, /*dummy*/0, /*dummy*/0, k, rowptr, /*dummy*/nullptr,
 //         colind, values, dense, out);
 //     }
@@ -228,12 +228,12 @@ void spmm_cuda_no_edge_value(
 //         gespmmAlg_t alg = GESPMM_ALG_PARREDUCE_ROWBALANCE;
 
 //         SpMatCsrDescr_t matA = {m, 0, 0, rowptr, colind, values};
-//         gespmmCsrSpMM( matA, dense, k, out, true, alg);   
+//         gespmmCsrSpMM( matA, dense, k, out, true, alg);
 //     }
 // }
 
 // // SR_EB_RM
-// void spmm_cuda_alg2(int m, 
+// void spmm_cuda_alg2(int m,
 //                 int k,
 //                 int *rowptr,
 //                 int *colind,
@@ -242,7 +242,7 @@ void spmm_cuda_no_edge_value(
 //                 float *out)
 // {
 //     if (k<=32 && (k & (k-1))==0) {
-//         cuda_csr_spmm(2, 1, m, /*dummy*/0, k, /*dummy*/0, 
+//         cuda_csr_spmm(2, 1, m, /*dummy*/0, k, /*dummy*/0,
 //         rowptr, colind, values, dense, out);
 //     }
 //     else {
@@ -250,12 +250,12 @@ void spmm_cuda_no_edge_value(
 //                                     GESPMM_ALG_SEQREDUCE_NNZBALANCE);
 
 //         SpMatCsrDescr_t matA = {m, 0, 0, rowptr, colind, values};
-//         gespmmCsrSpMM( matA, dense, k, out, true, alg);   
+//         gespmmCsrSpMM( matA, dense, k, out, true, alg);
 //     }
 // }
 
 // // PR_EB_RM
-// void spmm_cuda_alg3(int m, 
+// void spmm_cuda_alg3(int m,
 //                 int k,
 //                 int *rowptr,
 //                 int *colind,
@@ -264,13 +264,13 @@ void spmm_cuda_no_edge_value(
 //                 float *out)
 // {
 //     if (k<=32 && (k & (k-1))==0) {
-//         cuda_csr_spmm(3, 1, m, /*dummy*/0, k, /*dummy*/0, 
+//         cuda_csr_spmm(3, 1, m, /*dummy*/0, k, /*dummy*/0,
 //         rowptr, colind, values, dense, out);
 //     }
 //     else {
 //         gespmmAlg_t alg = GESPMM_ALG_PARREDUCE_NNZBALANCE;
 
 //         SpMatCsrDescr_t matA = {m, 0, 0, rowptr, colind, values};
-//         gespmmCsrSpMM( matA, dense, k, out, true, alg); 
-//     }  
+//         gespmmCsrSpMM( matA, dense, k, out, true, alg);
+//     }
 // }

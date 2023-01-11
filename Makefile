@@ -1,4 +1,4 @@
-CC = gcc 
+CC = gcc
 TARGET := dgsparse.so
 BASE_DIR = $(PWD)
 DIRS :=src
