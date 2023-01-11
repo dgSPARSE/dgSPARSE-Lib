@@ -5,6 +5,8 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+#include <stdio.h>
+#include <string.h>
 
 #define CEIL(x, y) (((x) + (y)-1) / (y))
 
