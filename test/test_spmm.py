@@ -20,7 +20,7 @@ class SpMM:
     def calculate(self):
         out_check = torch.sparse.mm(self.tcsr, self.input_feature)
         out = spmm_sum(self.dcsr, self.input_feature)
-        assert (torch.allclose(out, out_check), True)
+        assert (torch.allclose(out, out_check) == True)
 
 
 def test_spmm():
