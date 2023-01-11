@@ -130,19 +130,19 @@ __global__ void csrspmm_parreduce_nnzbalance_kernel(
   int nnz = nnz_;
   if (nnz < 0)
       nnz = csr_indptr[M];
-  
+
   int lane_id = (threadIdx.x & (tile_size - 1));
   int Nnzdim_warp_id = blockIdx.x * blockDim.y + threadIdx.y;
   int nz_start = Nnzdim_warp_id * tile_size;
   int stride = gridDim.x * (blockDim.y * tile_size);
-  
+
   // get the dense column offset
   int col_offset = (blockIdx.y * tile_size) + (threadIdx.x / tile_size) * CoarsenFactor;
   const float *B_panel = B + col_offset;
   float *C_panel = C + col_offset;
   int ldB = N;
   int ldC = N;
-  
+
   int k;
   float v;
   float c[CoarsenFactor] = {0};
@@ -153,12 +153,12 @@ __global__ void csrspmm_parreduce_nnzbalance_kernel(
       return;
   if (col_offset + CoarsenFactor >= N)
       goto Ndim_Residue;
-  
+
   for (int nz_id = nz_start + lane_id;
           nz_id < nnz + lane_id; // make sure NO warp loop-divergence
           nz_id += stride) {
       int row = binary_search_segment_number<int>(csr_indptr, M, nnz, nz_id);
-  
+
       if (nz_id < nnz) {
       k = csr_indices[nz_id];
       v = __guard_load_default_one<float>(csr_data, nz_id);
@@ -166,14 +166,14 @@ __global__ void csrspmm_parreduce_nnzbalance_kernel(
       k = 0;
       v = 0.0f;
       }
-  
+
       // load B-elements in vector-type
       *(access_t *)buffer = *(access_t *)(B_panel + k * ldB);
   #pragma unroll
       for (int i = 0; i < CoarsenFactor; i++) {
       c[i] = buffer[i] * v;
       }
-      
+
       // reduction
       int row_intv = group.shfl(row, group.size()-1) - group.shfl(row, 0);
       if (row_intv == 0) {

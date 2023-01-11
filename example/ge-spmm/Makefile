@@ -11,7 +11,7 @@ spmm.out: spmm.o $(LIB)
 	nvcc -I$(PROJ_DIR) $(INC) $(LOADPATH) -lcusparse -o $@ $^
 
 %.o: %.cu
-	nvcc -std=c++11 $(INC) -I$(PROJ_DIR) -c $< 
+	nvcc -std=c++11 $(INC) -I$(PROJ_DIR) -c $<
 
 clean:
 	rm -f *.out *.o

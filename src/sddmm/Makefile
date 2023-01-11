@@ -11,7 +11,7 @@ NVCC_FLAGS =\
 -gencode arch=compute_70,code=sm_70 \
 -gencode arch=compute_75,code=sm_75 \
 -gencode arch=compute_80,code=sm_80 \
--gencode arch=compute_86,code=sm_86 
+-gencode arch=compute_86,code=sm_86
 
 LIBRARY = -lcudart
 LOADPATH = -L$(CUDA_HOME)/lib64
@@ -26,7 +26,7 @@ all : $(TARGET)
 $(TARGET): $(OBJS)
 	ar cr $@ $^
 	ranlib $@
-	if [ ! -d $(OBJ_DIR) ]; then mkdir $(OBJ_DIR); else echo "folder exists"; fi 
+	if [ ! -d $(OBJ_DIR) ]; then mkdir $(OBJ_DIR); else echo "folder exists"; fi
 	cp $^ $(OBJ_DIR)
 
 clean:

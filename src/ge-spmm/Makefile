@@ -12,7 +12,7 @@ NVCC_FLAGS =\
 -gencode arch=compute_70,code=sm_70 \
 -gencode arch=compute_75,code=sm_75 \
 -gencode arch=compute_80,code=sm_80 \
--gencode arch=compute_86,code=sm_86 
+-gencode arch=compute_86,code=sm_86
 
 CC = g++
 CC_FLAGS = -O2 -Wall -std=c++11 -fPIC
@@ -27,9 +27,9 @@ all: $(TARGET)
 $(TARGET) : $(OBJS)
 	ar cr $@ $^
 	ranlib $@
-	if [ ! -d $(OBJ_DIR) ]; then mkdir $(OBJ_DIR); else echo "folder exists"; fi 
+	if [ ! -d $(OBJ_DIR) ]; then mkdir $(OBJ_DIR); else echo "folder exists"; fi
 	cp $(OBJS) $(OBJ_DIR)
-	
+
 %.cu.o: %.cu
 	$(NVCC) $(NVCC_FLAGS) $(INC) -c $< -o $@
 
