@@ -6,7 +6,7 @@ from dgsparse import spmm_sum
 from dgsparse import SparseTensor
 
 
-class SpMM:
+class SpMMSum:
     def __init__(self, path, in_dim, device) -> None:
         sparsecsr = mmread(path).astype("float32").tocsr()
         rowptr = torch.from_numpy(sparsecsr.indptr).to(device).int()
@@ -17,12 +17,13 @@ class SpMM:
         nodes = rowptr.size(0) - 1
         self.input_feature = torch.rand((nodes, in_dim)).to(device)
 
-    def calculate(self):
+    def forward_check(self):
         out_check = torch.sparse.mm(self.tcsr, self.input_feature)
         out = spmm_sum(self.dcsr, self.input_feature)
-        assert (torch.allclose(out, out_check) == True)
+        assert torch.allclose(out, out_check) == True
 
 
 def test_spmm():
-    gc = SpMM("../example/data/p2p-Gnutella31.mtx", 32, 0)
+    gc = SpMMSum("../example/data/p2p-Gnutella31.mtx", 32, 0)
+    gc.forward_check()
     # gc.calculate()

@@ -15,10 +15,12 @@ class SparseTensor(object):
         col: Optional[torch.Tensor] = None,
         values: Optional[torch.Tensor] = None,
         has_value: bool = False,
+        # is_symmetry: bool = False,
         is_sorted: bool = False,
     ):
         self.storage = Storage(row=row, rowptr=rowptr, col=col, values=values)
         self.has_value = has_value
+        # self.is_symmetry = is_symmetry
 
     @classmethod
     def from_torch_sparse_csr_tensor(self, mat: torch.Tensor, has_value: bool = True):

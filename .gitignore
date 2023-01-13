@@ -9,3 +9,4 @@ dist
 build/
 .pytest_cache
 setup.cfg
+.vscode

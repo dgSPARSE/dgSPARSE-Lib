@@ -17,9 +17,9 @@ def spmm_sum(sparse: SparseTensor, dense: torch.Tensor) -> torch.Tensor:
     rtype: :class:'Tensor'
     """
     has_value = sparse.has_value
-    rowptr = sparse.rowptr
-    col = sparse.col
-    values = sparse.values
+    rowptr = sparse.storage._rowptr
+    col = sparse.storage._col
+    values = sparse.storage._values
     return torch.ops.dgsparse.spmm_sum(rowptr, col, values, dense, has_value)
 
 
@@ -34,7 +34,7 @@ def spmm_mean(sparse: SparseTensor, dense: torch.Tensor) -> torch.Tensor:
     rtype: :class:'Tensor'
     """
     has_value = sparse.has_value
-    rowptr = sparse.rowptr
-    col = sparse.col
-    values = sparse.values
+    rowptr = sparse.storage._rowptr
+    col = sparse.storage._col
+    values = sparse.storage._values
     return torch.ops.dgsparse.spmm_mean(rowptr, col, values, dense, has_value)

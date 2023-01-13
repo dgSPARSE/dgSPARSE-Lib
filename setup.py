@@ -46,7 +46,7 @@ def get_extensions():
         libraries = []
         extra_compile_args = {"cxx": ["-O2"]}
         extra_link_args = [] if WITH_SYMBOLS else ["-s"]
-        extra_link_args += ["-lcusparse"] if suffix == "cuda"  else []
+        extra_link_args += ["-lcusparse"] if suffix == "cuda" else []
 
         if suffix == "cuda":
             define_macros += [("WITH_CUDA", None)]
