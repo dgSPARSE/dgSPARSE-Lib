@@ -1,10 +1,15 @@
-#include "./cuda/kernel.h"
+#include "./cpu/cpu_kernel.h"
+#include "./cuda/cuda_kernel.h"
 #include <torch/all.h>
 #include <torch/extension.h>
 #include <torch/python.h>
 #include <torch/script.h>
 #include <torch/torch.h>
 #include <vector>
+
+std::vector<torch::Tensor> csr2csc(int64_t rows, int64_t cols,
+                                   torch::Tensor rowptr, torch::Tensor colind,
+                                   torch::Tensor values);
 
 torch::Tensor spmm_sum(torch::Tensor rowptr, torch::Tensor col,
                        torch::Tensor values, torch::Tensor dense,
@@ -61,6 +66,20 @@ torch::Tensor spmm_sum(torch::Tensor rowptr, torch::Tensor col,
   return SpMMSum::apply(rowptr, col, values, dense, has_value);
 }
 
+std::vector<torch::Tensor> csr2csc(int64_t rows, int64_t cols,
+                                   torch::Tensor rowptr, torch::Tensor colind,
+                                   torch::Tensor values) {
+  if (rowptr.device().is_cuda()) {
+#ifdef WITH_CUDA
+    return csr2csc_cuda(rowptr, colind, values);
+#else
+    AT_ERROR("Not compiled with CUDA support");
+#endif
+  } else {
+    return csr2csc_cpu(rows, cols, rowptr, colind, values);
+  }
+}
+
 /*
 [TO DO]
 
@@ -75,4 +94,7 @@ class SpMMMean : public torch::autograd::Function<SpMMMean>
 
 */
 
-TORCH_LIBRARY(dgsparse, m) { m.def("spmm_sum", &spmm_sum); }
+TORCH_LIBRARY(dgsparse, m) {
+  m.def("spmm_sum", &spmm_sum);
+  m.def("csr2csc", &csr2csc);
+}

@@ -2,7 +2,7 @@
 #include "../../include/cuda/cuda_util.cuh"
 #include "../../include/cuda/sddmm_cuda.cuh"
 #include "../../include/cuda/spmm_cuda.cuh"
-#include "kernel.h"
+#include "cuda_kernel.h"
 #include <c10/cuda/CUDAGuard.h>
 #include <iostream>
 
