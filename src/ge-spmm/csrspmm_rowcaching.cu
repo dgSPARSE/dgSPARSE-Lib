@@ -163,7 +163,7 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
 
   for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
-  for (int tile_base = nz_start; 
+  for (int tile_base = nz_start;
     tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
 
     int thread_nz_id = tile_base + lane_id;
@@ -224,10 +224,10 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
 Ndim_Residue:
 
   int valid_lane_num = CEIL(N - col_offset - lane_id, 32);
-  
+
   for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
-  for (int tile_base = nz_start; 
+  for (int tile_base = nz_start;
     tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
 
     int thread_nz_id = tile_base + lane_id;

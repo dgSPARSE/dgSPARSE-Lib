@@ -39,6 +39,7 @@ def spmm_mean(sparse: SparseTensor, dense: torch.Tensor) -> torch.Tensor:
     values = sparse.storage._values
     return torch.ops.dgsparse.spmm_mean(rowptr, col, values, dense, has_value)
 
+
 def spmm_max(sparse: SparseTensor, dense: torch.Tensor) -> torch.Tensor:
     r"""
     Matrix multiplication-like of a sparse tensor and a dense tensor with mean reduction.

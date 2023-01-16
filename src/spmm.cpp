@@ -85,7 +85,7 @@ std::vector<torch::Tensor> csr2csc(int64_t rows, int64_t cols,
 
 class SpMMMin : public torch::autograd::Function<SpMMMin>
 
-class SpMMMax : public torch::autograd::Function<SpMMMax> 
+class SpMMMax : public torch::autograd::Function<SpMMMax>
 
 class SpMMMean : public torch::autograd::Function<SpMMMean>
 
