@@ -14,9 +14,9 @@ void csr2cscKernel(int m, int n, int nnz, int devid, int *csrRowPtr,
   void *buffer = NULL;
   checkCuSparseError(cusparseCsr2cscEx2_bufferSize(
       handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr,
-      cscRowInd, CUDA_R_32F, CUSPARSE_ACTION_SYMBOLIC, CUSPARSE_INDEX_BASE_ZERO,
+      cscRowInd, CUDA_R_32F, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO,
       CUSPARSE_CSR2CSC_ALG1, &bufferSize));
-  checkCudaError(cudaMalloc((void **)&buffer, bufferSize * sizeof(float)));
+  checkCudaError(cudaMalloc((void **)&buffer, bufferSize));
   checkCuSparseError(cusparseCsr2cscEx2(
       handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr,
       cscRowInd, CUDA_R_32F, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO,

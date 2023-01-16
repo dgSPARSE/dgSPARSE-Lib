@@ -29,6 +29,7 @@ if os.getenv("FORCE_ONLY_CUDA", "0") == "1":
 if os.getenv("FORCE_ONLY_CPU", "0") == "1":
     suffices = ["cpu"]
 
+MKLROOT = os.getenv("MKLROOT")
 WITH_SYMBOLS = True if os.getenv("WITH_SYMBOLS", "0") == "1" else False
 
 print(f"Building with CUDA: {WITH_CUDA}, ", "CUDA_HOME:", CUDA_HOME)
@@ -69,7 +70,7 @@ def get_extensions():
         extension = Extension(
             f"dgsparse._{name}_{suffix}",
             sources,
-            include_dirs=[extensions_dir],
+            include_dirs=[extensions_dir, MKLROOT],
             define_macros=define_macros,
             undef_macros=undef_macros,
             extra_compile_args=extra_compile_args,
