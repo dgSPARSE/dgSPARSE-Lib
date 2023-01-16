@@ -87,8 +87,6 @@ class SpMMMin : public torch::autograd::Function<SpMMMin>
 
 class SpMMMax : public torch::autograd::Function<SpMMMax>
 
-class SpMMMin : public torch::autograd::Function<SpMMMin>
-
 class SpMMMean : public torch::autograd::Function<SpMMMean>
 
 

@@ -67,11 +67,10 @@ void csrspmm_non_transpose_seqreduce_nnzbalance(const SpMatCsrDescr_t spmatA,
                                                 const float *B, const int N,
                                                 float *C);
 // -- parreduce --
-//template <int group_factor, int tile_factor, int block_numer,int block_denom>
 void csrspmm_parreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
-                                  const int N, float *C, const int group_factor, const int tile_factor, const float block_factor);
+                                  const int N, float *C);
 void csrspmm_parreduce_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
-                                  const int N, float *C, const int group_factor, const int tile_factor, const float block_factor);
+                                  const int N, float *C);
 // -- seqreduce --
 void csrspmm_seqreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
                                   const int N, float *C);
@@ -81,6 +80,6 @@ void csrspmm_seqreduce_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
 void csrspmm_rowcaching_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
                                    const int N, float *C);
 void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
-                                   const int N, float *C, const int group_factor, const float block_factor);
+                                   const int N, float *C);
 }
 #endif // GESPMM_H

@@ -3,8 +3,7 @@
 
 #include "../util/cuda_util.cuh"
 #include "gespmm.h"
-#include <cooperative_groups.h>
-using namespace cooperative_groups;
+
 // Row-caching strategy pre-loads sparse elements into shared memory
 // bucket-by-bucket and share the buffered sparse values within the same warp.
 // The __syncwarp() primitive is used to assure shared-memory race safety.
@@ -119,7 +118,7 @@ Ndim_Residue:
   return;
 }
 
-template <int CoarsenFactor, int ThreadNz, int group_size>
+template <int CoarsenFactor, int ThreadNz>
 __global__ void csrspmm_rowcaching_nnzbalance_kernel(
     const int M, const int N, const int K, const int nnz_,
     const int csr_indptr[], const int csr_indices[], const float csr_data[],
@@ -127,29 +126,29 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
   int nnz = nnz_;
   if (nnz < 0)
     nnz = csr_indptr[M];
-  thread_block_tile<group_size,thread_block> group = tiled_partition<group_size>(this_thread_block());
-  int warp_id = group.meta_group_rank();
-  int lane_id = group.thread_rank();
+
+  int warp_id = threadIdx.x >> 5;
+  int lane_id = threadIdx.x & 31;
 
   extern __shared__ int shared_mem[];
-  int *workspace_rowid = &shared_mem[(warp_id * group_size)];
+  int *workspace_rowid = &shared_mem[(warp_id << 5)];
   int *workspace_colid = workspace_rowid + blockDim.x;
   float *workspace_data =
       (float *)(workspace_colid +
                 blockDim.x); // float and int has the same size
 
   // get the sparse-value range of this row
-  int global_warp_id = blockIdx.x * (blockDim.x / group_size) + warp_id;
-  int nz_start = global_warp_id * (ThreadNz * group_size);
+  int global_warp_id = blockIdx.x * (blockDim.x >> 5) + warp_id;
+  int nz_start = global_warp_id * (ThreadNz * 32);
 
   // get the dense column offset
-  int col_offset = blockIdx.y * group_size * CoarsenFactor;
+  int col_offset = blockIdx.y * 32 * CoarsenFactor;
   const float *B_lanes[CoarsenFactor];
   float *C_lanes[CoarsenFactor];
 #pragma unroll
   for (int i = 0; i < CoarsenFactor; i++) {
-    B_lanes[i] = B + col_offset + lane_id + i * group_size;
-    C_lanes[i] = C + col_offset + lane_id + i * group_size;
+    B_lanes[i] = B + col_offset + lane_id + i * 32;
+    C_lanes[i] = C + col_offset + lane_id + i * 32;
   }
   int ldB = N;
 
@@ -157,7 +156,7 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
   float c[CoarsenFactor] = {0.0f};
   int ldC = N;
 
-  int stride = gridDim.x * blockDim.x * ThreadNz;
+  int stride = gridDim.x * (blockDim.x >> 5) * ThreadNz * 32;
 
   if (blockIdx.y == gridDim.y - 1)
     goto Ndim_Residue;
@@ -165,7 +164,7 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
   for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
   for (int tile_base = nz_start;
-    tile_base < min(nz_start + ThreadNz * group_size, nnz); tile_base += group_size) {
+    tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
 
     int thread_nz_id = tile_base + lane_id;
     if (thread_nz_id < nnz) {
@@ -178,7 +177,7 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
     }
     workspace_rowid[lane_id] =
         binary_search_segment_number<int>(csr_indptr, M, nnz, thread_nz_id);
-    group.sync();
+    __syncwarp();
 
     // initialize with first value
     int k = workspace_colid[0];
@@ -191,7 +190,7 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
 
 // scan
 #pragma unroll
-    for (int pp = 1; pp < group_size; pp++) {
+    for (int pp = 1; pp < 32; pp++) {
       next_row = workspace_rowid[pp];
       if (next_row != row_curr) {
 #pragma unroll
@@ -224,12 +223,12 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
 
 Ndim_Residue:
 
-  int valid_lane_num = CEIL(N - col_offset - lane_id, group_size);
+  int valid_lane_num = CEIL(N - col_offset - lane_id, 32);
 
   for (; nz_start < nnz; nz_start += stride) {
   // iterate over the segment of this warp
   for (int tile_base = nz_start;
-    tile_base < min(nz_start + ThreadNz * group_size, nnz); tile_base += group_size) {
+    tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
 
     int thread_nz_id = tile_base + lane_id;
     if (thread_nz_id < nnz) {
@@ -242,7 +241,7 @@ Ndim_Residue:
     }
     workspace_rowid[lane_id] =
         binary_search_segment_number<int>(csr_indptr, M, nnz, thread_nz_id);
-    group.sync();
+    __syncwarp();
 
     // initialize with first value
     int k = workspace_colid[0];
@@ -257,7 +256,7 @@ Ndim_Residue:
 
 // scan
 #pragma unroll
-    for (int pp = 1; pp < group_size; pp++) {
+    for (int pp = 1; pp < 32; pp++) {
       next_row = workspace_rowid[pp];
       if (next_row != row_curr) {
 #pragma unroll
@@ -322,14 +321,19 @@ void csrspmm_rowcaching_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
 }
 
 void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
-                                   const int N, float *C, const int group_factor, const float block_factor) {
-  int CoarsenFactor = (N >= 64) ? 4 : (N >= 16) ? 2 : 1;
-  int group_size = 1<<group_factor;
-  int coarsen_factor = min(CEIL(N, group_size), CoarsenFactor);
-  int Ndim_threadblock = CEIL(N, (group_size * coarsen_factor));
+                                   const int N, float *C) {
+  int coarsen_factor = (N >= 512) ? 4 : (N >= 128) ? 2 : 1;
+  int Ndim_threadblock = CEIL(N, (32 * coarsen_factor));
 
-  int thread_nz = (N>4) ? 1 : 2;
-  int Nnzdim_threadblock = (float)spmatA.nrow * block_factor;
+  // int thread_nz = (spmatA.nnz > 8000 * 128 * 2) ? 2 : 1;
+  int thread_nz = 1;
+  int Nnzdim_warp_per_tb = RefThreadPerBlock / 32;
+  // int Nnzdim_threadblock = CEIL(spmatA.nnz, Nnzdim_warp_per_tb * 32 *
+  // thread_nz );
+  int Nnzdim_threadblock = CEIL(
+      spmatA.nrow,
+      Nnzdim_warp_per_tb *
+          thread_nz); // CEIL(spmatA.nnz, Nnzdim_warp_per_tb * 32 * thread_nz );
 
   dim3 gridDim(Nnzdim_threadblock, Ndim_threadblock, 1);
   dim3 blockDim(RefThreadPerBlock, 1, 1);
@@ -339,128 +343,52 @@ void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
   // simple heuristic
 
   if (coarsen_factor == 4) {
-    if (thread_nz == 1) {
-      switch(group_factor) {
-      case 2: csrspmm_rowcaching_nnzbalance_kernel<4, 1, 4>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+    if (thread_nz == 1)
+      csrspmm_rowcaching_nnzbalance_kernel<4, 1>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
                                              spmatA.nnz, spmatA.indptr,
-                                             spmatA.indices, spmatA.data, B, C);break;
-      case 3: csrspmm_rowcaching_nnzbalance_kernel<4, 1, 8>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      case 4: csrspmm_rowcaching_nnzbalance_kernel<4, 1, 16>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 5: csrspmm_rowcaching_nnzbalance_kernel<4, 1, 32>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      }
-    }
-    if (thread_nz == 2) {
-      switch(group_factor) {
-      case 2: csrspmm_rowcaching_nnzbalance_kernel<4, 2, 4>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 3: csrspmm_rowcaching_nnzbalance_kernel<4, 2, 8>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      case 4: csrspmm_rowcaching_nnzbalance_kernel<4, 2, 16>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 5: csrspmm_rowcaching_nnzbalance_kernel<4, 2, 32>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      }
-    }
-
+                                             spmatA.indices, spmatA.data, B, C);
+    if (thread_nz == 2)
+      csrspmm_rowcaching_nnzbalance_kernel<4, 2>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+                                             spmatA.nnz, spmatA.indptr,
+                                             spmatA.indices, spmatA.data, B, C);
+    if (thread_nz == 4)
+      csrspmm_rowcaching_nnzbalance_kernel<4, 4>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+                                             spmatA.nnz, spmatA.indptr,
+                                             spmatA.indices, spmatA.data, B, C);
   } else if (coarsen_factor == 2) {
-    if (thread_nz == 1) {
-      switch(group_factor) {
-      case 2: csrspmm_rowcaching_nnzbalance_kernel<2, 1, 4>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+    if (thread_nz == 1)
+      csrspmm_rowcaching_nnzbalance_kernel<2, 1>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
                                              spmatA.nnz, spmatA.indptr,
-                                             spmatA.indices, spmatA.data, B, C);break;
-      case 3: csrspmm_rowcaching_nnzbalance_kernel<2, 1, 8>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      case 4: csrspmm_rowcaching_nnzbalance_kernel<2, 1, 16>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 5: csrspmm_rowcaching_nnzbalance_kernel<2, 1, 32>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      }
-    }
-    if (thread_nz == 2) {
-      switch(group_factor) {
-      case 2: csrspmm_rowcaching_nnzbalance_kernel<2, 2, 4>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 3: csrspmm_rowcaching_nnzbalance_kernel<2, 2, 8>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      case 4: csrspmm_rowcaching_nnzbalance_kernel<2, 2, 16>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 5: csrspmm_rowcaching_nnzbalance_kernel<2, 2, 32>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      }
-    }
+                                             spmatA.indices, spmatA.data, B, C);
+    if (thread_nz == 2)
+      csrspmm_rowcaching_nnzbalance_kernel<2, 2>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+                                             spmatA.nnz, spmatA.indptr,
+                                             spmatA.indices, spmatA.data, B, C);
+    if (thread_nz == 4)
+      csrspmm_rowcaching_nnzbalance_kernel<2, 4>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+                                             spmatA.nnz, spmatA.indptr,
+                                             spmatA.indices, spmatA.data, B, C);
   } else {
-    if (thread_nz == 1) {
-      switch(group_factor) {
-      case 2: csrspmm_rowcaching_nnzbalance_kernel<1, 1, 4>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+    if (thread_nz == 1)
+      csrspmm_rowcaching_nnzbalance_kernel<1, 1>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
                                              spmatA.nnz, spmatA.indptr,
-                                             spmatA.indices, spmatA.data, B, C);break;
-      case 3: csrspmm_rowcaching_nnzbalance_kernel<1, 1, 8>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      case 4: csrspmm_rowcaching_nnzbalance_kernel<1, 1, 16>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 5: csrspmm_rowcaching_nnzbalance_kernel<1, 1, 32>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      }
-    }
-    if (thread_nz == 2) {
-      switch(group_factor) {
-      case 2: csrspmm_rowcaching_nnzbalance_kernel<1, 2, 4>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 3: csrspmm_rowcaching_nnzbalance_kernel<1, 2, 8>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      case 4: csrspmm_rowcaching_nnzbalance_kernel<1, 2, 16>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                              spmatA.nnz, spmatA.indptr,
-                                              spmatA.indices, spmatA.data, B, C);break;
-      case 5: csrspmm_rowcaching_nnzbalance_kernel<1, 2, 32>
-      <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
-                                        spmatA.nnz, spmatA.indptr,
-                                        spmatA.indices, spmatA.data, B, C);break;
-      }
-    }
+                                             spmatA.indices, spmatA.data, B, C);
+    if (thread_nz == 2)
+      csrspmm_rowcaching_nnzbalance_kernel<1, 2>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+                                             spmatA.nnz, spmatA.indptr,
+                                             spmatA.indices, spmatA.data, B, C);
+    if (thread_nz == 4)
+      csrspmm_rowcaching_nnzbalance_kernel<1, 4>
+          <<<gridDim, blockDim, smem_size>>>(spmatA.nrow, N, spmatA.ncol,
+                                             spmatA.nnz, spmatA.indptr,
+                                             spmatA.indices, spmatA.data, B, C);
   }
 }
