@@ -61,12 +61,13 @@ torch::Tensor spmm_sum(torch::Tensor rowptr, torch::Tensor col,
   return SpMMSum::apply(rowptr, col, values, dense, has_value);
 }
 
+class SpMMMax : public torch::autograd::Function<SpMMMax> {
+public:
+  //
+}
+
 /*
 [TO DO]
-
-class SpMMMin : public torch::autograd::Function<SpMMMin>
-
-class SpMMMax : public torch::autograd::Function<SpMMMax>
 
 class SpMMMin : public torch::autograd::Function<SpMMMin>
 
