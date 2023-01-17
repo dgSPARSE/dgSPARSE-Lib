@@ -19,6 +19,25 @@ The dgSPARSE Library (Deep Graph Sparse Library) is a high performance library f
     └── ge-spmm: GE-SpMM implementation.
 ```
 
+## Installation
+
+First, setup the the following environment variables:
+
+``` bash
+export MKLROOT=/opt/intel/mkl # your mkl path
+export CUDA_HOME=/usr/local/cuda # your cuda path
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64 # your cuda lib path
+```
+
+Then, install with pip.
+
+``` bash
+pip install dgsparse
+```
+
+> for developers, you could also install from source code with `python setup.py install`.
+
+
 ## Run Examples
 
 Check your environment.
