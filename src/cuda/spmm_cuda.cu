@@ -24,6 +24,7 @@ torch::Tensor spmm_cuda(torch::Tensor csrptr, torch::Tensor indices,
   int Mdim_thread_per_tb = CEIL(RefThreadPerBlock, Ndim_thread_per_tb);
   int Mdim_threadblock = CEIL(Mdim_worker, Mdim_thread_per_tb);
 
+  in_feat = in_feat.contiguous();
   dim3 gridDim(Mdim_threadblock, Ndim_threadblock, 1);
   dim3 blockDim(Ndim_thread_per_tb, Mdim_thread_per_tb, 1);
 
@@ -41,8 +42,8 @@ torch::Tensor spmm_cuda(torch::Tensor csrptr, torch::Tensor indices,
   else
     csrspmm_rowbalance_kernel<<<gridDim, blockDim>>>(
         Mdim_worker, Ndim_worker, csrptr.data_ptr<int>(),
-        indices.data_ptr<int>(), (float*) nullptr,
-        in_feat.data_ptr<float>(), out_feat.data_ptr<float>());
+        indices.data_ptr<int>(), (float *)nullptr, in_feat.data_ptr<float>(),
+        out_feat.data_ptr<float>());
 
   return out_feat;
 }
