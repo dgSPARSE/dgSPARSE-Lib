@@ -16,7 +16,7 @@ class SparseTensor(object):
         values: Optional[torch.Tensor] = None,
         has_value: bool = False,
         # is_symmetry: bool = False,
-        is_sorted: bool = False,
+        # is_sorted: bool = False,
     ):
         self.storage = Storage(row=row, rowptr=rowptr, col=col, values=values)
         self.has_value = has_value
@@ -34,5 +34,5 @@ class SparseTensor(object):
             col=mat.col_indices(),
             values=values,
             has_value=has_value,
-            is_sorted=True,
+            # is_sorted=True,
         )

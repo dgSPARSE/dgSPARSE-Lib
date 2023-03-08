@@ -18,13 +18,13 @@ class SpMMSum:
         # prepare for pytorch_sparse
         row = torch.from_numpy(sparsecoo.row).type(torch.int64)
         col = torch.from_numpy(sparsecoo.col).type(torch.int64)
+        print(rowptr)
+        print(colind)
         index = torch.cat((row.unsqueeze(0), col.unsqueeze(0)), 0)
         self.index = index.to(device)
         self.m = sparsecoo.shape[0]
         self.n = sparsecoo.shape[1]
         self.weight = weight
-        print(self.m)
-        print(self.n)
 
         # prepare for torch and dgsparse
         self.tcsr = torch.sparse_csr_tensor(rowptr, colind, weight, dtype=torch.float)
@@ -47,7 +47,6 @@ class SpMMSum:
         out_check = spmm(self.index, self.weight, self.m, self.n, self.input_feature)
         out_check.sum().backward()
         dX_check = self.input_feature.grad
-
         out = spmm_sum(self.dcsr, self.input_feature)
         out.sum().backward()
         dX = self.input_feature.grad
@@ -58,4 +57,3 @@ def test_spmm():
     gc = SpMMSum("../example/data/p2p-Gnutella31.mtx", 32, 0)
     gc.forward_check()
     gc.backward_check()
-    # gc.calculate()
