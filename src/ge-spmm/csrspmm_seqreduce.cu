@@ -17,21 +17,24 @@ csrspmm_seqreduce_rowbalance_kernel(const int nr, const int nv, const int nc,
   int stride = row_tile * gridDim.x;
   int row = blockIdx.x * row_tile + subwarp_id;
   int v_id = (blockIdx.y * blockDim.x) + threadIdx.x;
-  dnInput += v_id;
-  dnOutput += v_id;
+  if(v_id < nv)
+  {
+    dnInput += v_id;
+    dnOutput += v_id;
 
-  float res = 0, val;
-  int col;
-  for (; row < nr; row += stride) {
+    float res = 0, val;
+    int col;
+    for (; row < nr; row += stride) {
 
-    int start = __ldg(rowPtr + row);
-    int end = __ldg(rowPtr + row + 1);
-    for (int p = start; p < end; p++) {
-      col = __ldg(colIdx + p);
-      val = __guard_load_default_one<float>(values, p);
-      res += val * __ldg(dnInput + col * nv);
+      int start = __ldg(rowPtr + row);
+      int end = __ldg(rowPtr + row + 1);
+      for (int p = start; p < end; p++) {
+        col = __ldg(colIdx + p);
+        val = __guard_load_default_one<float>(values, p);
+        res += val * __ldg(dnInput + col * nv);
+      }
+      dnOutput[row * nv] = res;
     }
-    dnOutput[row * nv] = res;
   }
 }
 
@@ -50,33 +53,35 @@ csrspmm_seqreduce_nnzbalance_kernel(const int nr, const int nv, const int nc,
   int v_id = (blockIdx.y * blockDim.x) + threadIdx.x;
   int col = 0;
   float val = 0.0;
+  if(v_id < nv)
+  {
+    if (eid < nnz) {
+      int row = binary_search_segment_number<int>(rowPtr, nr, nnz, eid);
+      int step = __ldg(rowPtr + row + 1) - eid;
 
-  if (eid < nnz) {
-    int row = binary_search_segment_number<int>(rowPtr, nr, nnz, eid);
-    int step = __ldg(rowPtr + row + 1) - eid;
+      for (int ii = 0; ii < NE_PER_THREAD; ii++) {
+        if (eid >= nnz)
+          break;
+        if (ii < step) {
+          col = __ldg(colIdx + eid) * nv;
+          val += __guard_load_default_one<float>(values, eid) *
+                __ldg(dnInput + col + v_id);
 
-    for (int ii = 0; ii < NE_PER_THREAD; ii++) {
-      if (eid >= nnz)
-        break;
-      if (ii < step) {
-        col = __ldg(colIdx + eid) * nv;
-        val += __guard_load_default_one<float>(values, eid) *
-               __ldg(dnInput + col + v_id);
+          eid++;
+        } else {
+          atomicAdd(&dnOutput[row * nv + v_id], val);
 
-        eid++;
-      } else {
-        atomicAdd(&dnOutput[row * nv + v_id], val);
+          row = binary_search_segment_number<int>(rowPtr, nr, nnz, eid);
+          step = __ldg(rowPtr + row + 1) - eid;
+          col = __ldg(colIdx + eid) * nv;
+          val = __guard_load_default_one<float>(values, eid) *
+                __ldg(dnInput + col + v_id);
 
-        row = binary_search_segment_number<int>(rowPtr, nr, nnz, eid);
-        step = __ldg(rowPtr + row + 1) - eid;
-        col = __ldg(colIdx + eid) * nv;
-        val = __guard_load_default_one<float>(values, eid) *
-              __ldg(dnInput + col + v_id);
-
-        eid++;
+          eid++;
+        }
       }
+      atomicAdd(&dnOutput[row * nv + v_id], val);
     }
-    atomicAdd(&dnOutput[row * nv + v_id], val);
   }
 }
 
