@@ -21,7 +21,6 @@ class Storage(object):
         col: Optional[torch.Tensor] = None,
         values: Optional[torch.Tensor] = None,
     ):
-
         assert row is not None or rowptr is not None
         assert col is not None
         assert col.dtype == torch.int
