@@ -67,16 +67,28 @@ def get_extensions():
         if suffix == "cuda" and osp.exists(path):
             sources += [path]
         Extension = CppExtension if suffix == "cpu" else CUDAExtension
-        extension = Extension(
-            f"dgsparse._{name}_{suffix}",
-            sources,
-            include_dirs=[extensions_dir, MKLROOT],
-            define_macros=define_macros,
-            undef_macros=undef_macros,
-            extra_compile_args=extra_compile_args,
-            extra_link_args=extra_link_args,
-            libraries=libraries,
-        )
+        if name == "version":
+            extension = Extension(
+                f"dgsparse._C",
+                sources,
+                include_dirs=[extensions_dir],
+                define_macros=define_macros,
+                undef_macros=undef_macros,
+                extra_compile_args=extra_compile_args,
+                extra_link_args=extra_link_args,
+                libraries=libraries,
+            )
+        else:
+            extension = Extension(
+                f"dgsparse._{name}_{suffix}",
+                sources,
+                include_dirs=[extensions_dir, MKLROOT],
+                define_macros=define_macros,
+                undef_macros=undef_macros,
+                extra_compile_args=extra_compile_args,
+                extra_link_args=extra_link_args,
+                libraries=libraries,
+            )
         extensions += [extension]
 
     return extensions

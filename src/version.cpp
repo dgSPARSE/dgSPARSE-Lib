@@ -1,6 +1,7 @@
 #ifdef WITH_PYTHON
 #include <Python.h>
 #endif
+#include <torch/extension.h>
 #include <torch/script.h>
 
 #ifdef WITH_CUDA
@@ -15,5 +16,6 @@ int64_t cuda_version() noexcept {
 #endif
 }
 
-static auto registry =
-    torch::RegisterOperators().op("dgsparse::cuda_version", &cuda_version);
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+  m.def("cuda_version", &cuda_version, "cuda_version");
+}

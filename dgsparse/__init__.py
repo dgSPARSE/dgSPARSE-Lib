@@ -16,10 +16,10 @@ for library in ["_spmm", "_version"]:
         torch.ops.load_library(spec.origin)
     else:
         raise ImportError(
-            f"Could not find module '{library}_cpu' in " f"{osp.dirname(__file__)}"
+            f"Could not find module '{library}_cuda' in " f"{osp.dirname(__file__)}"
         )
-
-cuda_version = torch.ops.dgsparse.cuda_version()
+import dgsparse._C
+cuda_version = dgsparse._C.cuda_version()
 if torch.version.cuda is not None and cuda_version != -1:  # pragma: no cover
     if cuda_version < 10000:
         major, minor = int(str(cuda_version)[0]), int(str(cuda_version)[2])
