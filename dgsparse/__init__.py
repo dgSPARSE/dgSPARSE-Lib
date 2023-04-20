@@ -19,6 +19,7 @@ for library in ["_spmm", "_version"]:
             f"Could not find module '{library}_cuda' in " f"{osp.dirname(__file__)}"
         )
 import dgsparse._C
+
 cuda_version = dgsparse._C.cuda_version()
 if torch.version.cuda is not None and cuda_version != -1:  # pragma: no cover
     if cuda_version < 10000:
