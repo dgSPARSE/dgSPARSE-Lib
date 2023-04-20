@@ -4,7 +4,6 @@ import os
 from scipy.io import mmread
 from dgsparse import spmm_sum
 from dgsparse import SparseTensor
-from torch_sparse import spmm
 
 
 class Csr2Csc:
@@ -40,5 +39,9 @@ class Csr2Csc:
 
 
 def test_csr2csc():
-    gc = Csr2Csc("../example/data/p2p-Gnutella31.mtx", 0)
+    # cuda:0
+    # gc = Csr2Csc("../example/data/p2p-Gnutella31.mtx", 0)
+    # gc.check()
+    # cpu check
+    gc = Csr2Csc("../example/data/p2p-Gnutella31.mtx", "cpu")
     gc.check()

@@ -4,7 +4,6 @@ import os
 from scipy.io import mmread
 from dgsparse import spmm_sum
 from dgsparse import SparseTensor
-from torch_sparse import spmm
 
 
 class SpMMSum:
@@ -44,7 +43,7 @@ class SpMMSum:
         assert torch.allclose(out, out_check) == True
 
     def backward_check(self):
-        out_check = spmm(self.index, self.weight, self.m, self.n, self.input_feature)
+        out_check = torch.sparse.mm(self.tcsr, self.input_feature)
         out_check.sum().backward()
         dX_check = self.input_feature.grad
         out = spmm_sum(self.dcsr, self.input_feature)
