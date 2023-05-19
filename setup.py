@@ -19,6 +19,9 @@ __version__ = "0.1"
 URL = "https://github.com/"
 
 WITH_CUDA = False
+if "--mandatory" in sys.argv:
+    WITH_CUDA = True
+    sys.argv.remove("--mandatory")
 if torch.cuda.is_available():
     WITH_CUDA = CUDA_HOME is not None
 suffices = ["cuda", "cpu"] if WITH_CUDA else ["cpu"]
