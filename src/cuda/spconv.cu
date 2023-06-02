@@ -1,4 +1,5 @@
 #include "../../include/cuda/spconv.cuh"
+#include "../../include/cuda/cuda_util.cuh"
 #include "cuda_kernel.h"
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
@@ -10,8 +11,6 @@
 #include <torch/extension.h>
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
-
-#define DIV_UP(x, y) ((x) + (y) - 1) / (y)
 
 void spconv_fwd_fused(
                         const at::Tensor in_feats, 
@@ -102,7 +101,7 @@ void spconv_fwd_fused(
     if (in_channel % 4 == 0 && out_channel % 4 == 0){   
       if (in_channel <= 16 || out_channel <= 16){
         _fgms_fusion_fp16_4_once<16, 4, 8>
-            <<<dim3(DIV_UP(out_channel, 16), DIV_UP(sum_nnz, 64), 1), dim3(4, 16, 1)>>>(
+            <<<dim3(CEIL(out_channel, 16), CEIL(sum_nnz, 64), 1), dim3(4, 16, 1)>>>(
             kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
             reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()),
             reinterpret_cast<half *>(kernel.data_ptr<at::Half>()),
@@ -113,7 +112,7 @@ void spconv_fwd_fused(
       else{
         if (arch80){
           _fgms_fusion_fp16_tc4_async<32, 4, 8, 16, 16, 16, 4, 2, 2>
-              <<<dim3(DIV_UP(out_channel, 32), DIV_UP(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
+              <<<dim3(CEIL(out_channel, 32), CEIL(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
               kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
               reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()),
               reinterpret_cast<half *>(kernel.data_ptr<at::Half>()),
@@ -123,7 +122,7 @@ void spconv_fwd_fused(
         }
         else{
           _fgms_fusion_fp16_tc4<32, 4, 8, 16, 16, 16, 4, 2, 2>
-              <<<dim3(DIV_UP(out_channel, 32), DIV_UP(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
+              <<<dim3(CEIL(out_channel, 32), CEIL(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
               kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
               reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()),
               reinterpret_cast<half *>(kernel.data_ptr<at::Half>()),
@@ -134,7 +133,7 @@ void spconv_fwd_fused(
       }
     }
     else if (in_channel % 2 == 0 && out_channel % 2 ==0){
-      _fgms_fusion_fp16_2<16, 8, 8><<<dim3(DIV_UP(out_channel, 16), DIV_UP(sum_nnz, 128), 1), dim3(8, 16, 1)>>>(
+      _fgms_fusion_fp16_2<16, 8, 8><<<dim3(CEIL(out_channel, 16), CEIL(sum_nnz, 128), 1), dim3(8, 16, 1)>>>(
           kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
           reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()),
           reinterpret_cast<half *>(kernel.data_ptr<at::Half>()),
@@ -143,7 +142,7 @@ void spconv_fwd_fused(
       );   
     }
     else{
-      _fgms_fusion_fp16_1<16, 4, 8><<<dim3(DIV_UP(out_channel, 16), DIV_UP(sum_nnz, 64), 1), dim3(16, 16, 1)>>>(
+      _fgms_fusion_fp16_1<16, 4, 8><<<dim3(CEIL(out_channel, 16), CEIL(sum_nnz, 64), 1), dim3(16, 16, 1)>>>(
           kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
           reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()),
           reinterpret_cast<half *>(kernel.data_ptr<at::Half>()),
@@ -156,7 +155,7 @@ void spconv_fwd_fused(
     if(in_channel % 4 == 0 && out_channel % 4 == 0){
       if (in_channel <= 16 && out_channel <= 16){
         _fgms_fusion_fp32_once<16, 4, 8>
-            <<<dim3(DIV_UP(out_channel, 16), DIV_UP(sum_nnz, 64), 1), dim3(4, 16, 1)>>>(
+            <<<dim3(CEIL(out_channel, 16), CEIL(sum_nnz, 64), 1), dim3(4, 16, 1)>>>(
             kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
             in_feats.data_ptr<float>(), kernel.data_ptr<float>(), out_feats.data_ptr<float>(), 
             in_map_ptr, out_map_ptr
@@ -165,7 +164,7 @@ void spconv_fwd_fused(
       else{
         if (arch80){
           _fgms_fusion_tf32<32, 4, 8, 16, 8, 16, 4, 2, 2>
-              <<<dim3(DIV_UP(out_channel, 32), DIV_UP(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
+              <<<dim3(CEIL(out_channel, 32), CEIL(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
               kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
               in_feats.data_ptr<float>(), kernel.data_ptr<float>(), out_feats.data_ptr<float>(), 
               in_map_ptr, out_map_ptr
@@ -173,7 +172,7 @@ void spconv_fwd_fused(
         }
         else{
           _fgms_fusion_fp32<32, 4, 8>
-              <<<dim3(DIV_UP(out_channel, 32), DIV_UP(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
+              <<<dim3(CEIL(out_channel, 32), CEIL(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
               kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
               in_feats.data_ptr<float>(), kernel.data_ptr<float>(), out_feats.data_ptr<float>(), 
               in_map_ptr, out_map_ptr
@@ -182,14 +181,14 @@ void spconv_fwd_fused(
       }
     }
     else if (in_channel % 2 == 0){
-      _fgms_fusion_fp32_2<16, 8, 8><<<dim3(DIV_UP(out_channel, 16), DIV_UP(sum_nnz, 128), 1), dim3(8, 16, 1)>>>(
+      _fgms_fusion_fp32_2<16, 8, 8><<<dim3(CEIL(out_channel, 16), CEIL(sum_nnz, 128), 1), dim3(8, 16, 1)>>>(
           kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
           in_feats.data_ptr<float>(), kernel.data_ptr<float>(), out_feats.data_ptr<float>(), 
           in_map_ptr, out_map_ptr
       );
     }
     else{
-      _fgms_fusion_fp32_1<16, 4, 8><<<dim3(DIV_UP(out_channel, 16), DIV_UP(sum_nnz, 64), 1), dim3(16, 16, 1)>>>(
+      _fgms_fusion_fp32_1<16, 4, 8><<<dim3(CEIL(out_channel, 16), CEIL(sum_nnz, 64), 1), dim3(16, 16, 1)>>>(
           kpos.data_ptr<int>(), qkpos.data_ptr<int>(), k_vol, in_channel, out_channel, 
           in_feats.data_ptr<float>(), kernel.data_ptr<float>(), out_feats.data_ptr<float>(), 
           in_map_ptr, out_map_ptr
@@ -262,8 +261,8 @@ void spconv_fwd_seq(const at::Tensor in_feats,
     
     if (cur_nnz == 0){continue;}
 
-    size_t gridnum_x = DIV_UP(out_channel, 32);
-    size_t gridnum_y = DIV_UP(cur_nnz, 32);
+    size_t gridnum_x = CEIL(out_channel, 32);
+    size_t gridnum_y = CEIL(cur_nnz, 32);
 
     if (data_type_half){
       if (in_channel % 4 == 0 && out_channel % 4 == 0){
@@ -279,7 +278,7 @@ void spconv_fwd_seq(const at::Tensor in_feats,
       }
       else{
         _fgms_seq_fp16_1<16, 4, 8>
-            <<<dim3(DIV_UP(out_channel, 16), DIV_UP(cur_nnz, 16), 1), dim3(16, 16, 1)>>>(
+            <<<dim3(CEIL(out_channel, 16), CEIL(cur_nnz, 16), 1), dim3(16, 16, 1)>>>(
             cur_nnz, in_channel, out_channel, 
             reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()), 
             reinterpret_cast<half *>(kernel.data_ptr<at::Half>() 
@@ -314,7 +313,7 @@ void spconv_fwd_seq(const at::Tensor in_feats,
       }
       else{
         _fgms_seq_fp32_1<16, 4, 8>
-            <<<dim3(DIV_UP(out_channel, 16), DIV_UP(cur_nnz, 16), 1), dim3(16, 16, 1)>>>(
+            <<<dim3(CEIL(out_channel, 16), CEIL(cur_nnz, 16), 1), dim3(16, 16, 1)>>>(
             cur_nnz, in_channel, out_channel, 
             in_feats.data_ptr<float>(), 
             (kernel.data_ptr<float>() + k * in_channel * out_channel), 
@@ -405,7 +404,7 @@ void spconv_bwd_fused(const at::Tensor out_feats_grad,
   // {\delta{out_feats}}^T X in_feats = {\delta{W}}^T
   if (data_type_half){
     _fgms_fusion_fp16_W_transpose<32, 4, 8, 16, 16, 16, 4, 2, 2>
-              <<<dim3(DIV_UP(in_channel, 32), DIV_UP(sum_nnz, 128), 1), dim3(4, 32, 1)>>>(
+              <<<dim3(CEIL(in_channel, 32), CEIL(sum_nnz, 128), 1), dim3(4, 32, 1)>>>(
                 kpos_ptr, qkpos_ptr, k_vol, in_channel, out_channel, 
                 reinterpret_cast<half *>(out_feats_grad.data_ptr<at::Half>()), 
                 reinterpret_cast<half *>(kernel.data_ptr<at::Half>()), 
@@ -413,7 +412,7 @@ void spconv_bwd_fused(const at::Tensor out_feats_grad,
                 out_map_ptr, in_map_ptr
           );
     _fgms_fusion_fp16_I_transpose<32, 8, 8, 16, 16, 16, 2, 2, 1>
-              <<<dim3(DIV_UP(sum_nnz, 256)), dim3(4, 32, 1)>>>(
+              <<<dim3(CEIL(sum_nnz, 256)), dim3(4, 32, 1)>>>(
                 kpos_ptr, qkpos_ptr, k_vol, in_channel, out_channel, 
                 reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()), 
                 reinterpret_cast<half *>(out_feats_grad.data_ptr<at::Half>()),
@@ -424,7 +423,7 @@ void spconv_bwd_fused(const at::Tensor out_feats_grad,
   else{
     // {\delta{out_feats}} X W^T = {\delta{in_feats}}
     _fgms_fusion_tf32_W_transpose<32, 4, 8, 16, 8, 16, 4, 2, 2>
-              <<<dim3(DIV_UP(in_channel, 32), DIV_UP(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
+              <<<dim3(CEIL(in_channel, 32), CEIL(sum_nnz, 128), 1), dim3(8, 32, 1)>>>(
                 kpos_ptr, qkpos_ptr, k_vol, in_channel, out_channel, 
                 out_feats_grad.data_ptr<float>(), 
                 kernel.data_ptr<float>(), 
@@ -433,7 +432,7 @@ void spconv_bwd_fused(const at::Tensor out_feats_grad,
           );
     // in_feats^T X {\delta{out_feats}} = {\delta{W}}
     _fgms_fusion_tf32_I_transpose<32, 8, 8, 16, 8, 16, 2, 2, 1>
-              <<<dim3(DIV_UP(sum_nnz, 128)), dim3(8, 16, 1)>>>(
+              <<<dim3(CEIL(sum_nnz, 128)), dim3(8, 16, 1)>>>(
                 kpos_ptr, qkpos_ptr, k_vol, in_channel, out_channel, 
                 in_feats.data_ptr<float>(), 
                 out_feats_grad.data_ptr<float>(),
