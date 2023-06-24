@@ -10,3 +10,4 @@ build/
 .pytest_cache
 setup.cfg
 .vscode
+*.DS_Store
