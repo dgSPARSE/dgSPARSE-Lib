@@ -60,14 +60,13 @@ int main(int argc, char *argv[]) {
     printf("Host allocation failed.\n");
     return EXIT_FAILURE;
   }
-  fill_random(csr_values_h, nnz);
+  fill_one(csr_values_h, nnz);
   fill_random(A_h, M * K);
   fill_random(B_h, N * K);
   // cpu validate
   printf("csr_indptr_buffer %d\n", csr_indptr_buffer[2]);
   sddmm_reference_host<int, float>(M, N, K, nnz, csr_indptr_buffer.data(),
-                                   csr_indices_buffer.data(), csr_values_h, A_h,
-                                   B_h, C_ref);
+                                   csr_indices_buffer.data(), A_h, B_h, C_ref);
   cudaDeviceReset();
   cudaSetDevice(0);
   // allocate device memory
@@ -115,28 +114,27 @@ int main(int argc, char *argv[]) {
   // creating dense matrices
   CUSPARSE_CHECK(cusparseCreateDnMat(&AMatDecsr, M, K, K, A_d, CUDA_R_32F,
                                      CUSPARSE_ORDER_ROW));
-  CUSPARSE_CHECK(cusparseCreateDnMat(&BMatDecsr, K, N, N, B_d, CUDA_R_32F,
+  CUSPARSE_CHECK(cusparseCreateDnMat(&BMatDecsr, N, K, K, B_d, CUDA_R_32F,
                                      CUSPARSE_ORDER_ROW));
 
   CUSPARSE_CHECK(cusparseSDDMM_bufferSize(
-      handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, AMatDecsr, BMatDecsr, &beta,
-      csrDescr, CUDA_R_32F, CUSPARSE_SDDMM_ALG_DEFAULT, &bufferSize));
+      handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
+      &alpha, AMatDecsr, BMatDecsr, &beta, csrDescr, CUDA_R_32F,
+      CUSPARSE_SDDMM_ALG_DEFAULT, &bufferSize));
   CUDA_CHECK(cudaMalloc(&dBuffer, bufferSize));
 
-  CUSPARSE_CHECK(cusparseSDDMM(
-      handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-      CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, AMatDecsr, BMatDecsr, &beta,
-      csrDescr, CUDA_R_32F, CUSPARSE_SDDMM_ALG_DEFAULT, dBuffer));
+  CUSPARSE_CHECK(cusparseSDDMM(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
+                               CUSPARSE_OPERATION_TRANSPOSE, &alpha, AMatDecsr,
+                               BMatDecsr, &beta, csrDescr, CUDA_R_32F,
+                               CUSPARSE_SDDMM_ALG_DEFAULT, dBuffer));
 
   //--------------------------------------------------------------------------
   // device result check
   CUDA_CHECK(cudaMemcpy(csr_values_h, csr_values_d, nnz * sizeof(float),
                         cudaMemcpyDeviceToHost));
+  bool correct = check_result<float>(nnz, 1, csr_values_h, C_ref);
 
-  // bool correct = check_result<float>(nnz, 1, csr_values_h, C_ref);
-
-  if (1) {
+  if (correct) {
     GpuTimer gpu_timer;
     int warmup_iter = 10;
     int repeat_iter = 100;
@@ -145,9 +143,9 @@ int main(int argc, char *argv[]) {
         gpu_timer.start();
       }
       cusparseSDDMM(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
-                    CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, AMatDecsr,
-                    BMatDecsr, &beta, csrDescr, CUDA_R_32F,
-                    CUSPARSE_SDDMM_ALG_DEFAULT, dBuffer);
+                    CUSPARSE_OPERATION_TRANSPOSE, &alpha, AMatDecsr, BMatDecsr,
+                    &beta, csrDescr, CUDA_R_32F, CUSPARSE_SDDMM_ALG_DEFAULT,
+                    dBuffer);
     }
     gpu_timer.stop();
 
@@ -162,12 +160,10 @@ int main(int argc, char *argv[]) {
   }
 
   //
-  // Run GE-SpMM and check result
+  // Run SDDMM and check result
   //
-
   CUDA_CHECK(cudaMemset(C_d, 0x0, sizeof(float) * nnz));
-
-  if (1) {
+  if (correct) {
     // benchmark GE-SpMM performance
     GpuTimer gpu_timer;
     int warmup_iter = 10;

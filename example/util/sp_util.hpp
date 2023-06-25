@@ -45,6 +45,12 @@ void fill_random(float array[], int size) {
   }
 }
 
+void fill_one(float array[], int size) {
+  for (int i = 0; i < size; i++) {
+    array[i] = 1.0;
+  }
+}
+
 // Fill a host array with all 0
 template <typename DType> void fill_zero(DType array[], int size) {
   memset(array, 0x0, sizeof(array[0]) * size);
@@ -77,31 +83,28 @@ void spmm_reference_host(
 
 // Compute sddmm correct numbers. All arrays are host memory locations.
 template <typename Index, typename DType>
-void sddmm_reference_host(
-    int M,   // number of S-rows, S is the sparse matrix
-    int N,   // number of S_cols
-    int K, // number of A columns
-    int nnz,  // number of nonzeros in S
+void sddmm_reference_host(int M,   // number of S-rows, S is the sparse matrix
+                          int N,   // number of S_cols
+                          int K,   // number of A columns
+                          int nnz, // number of nonzeros in S
 
-    const Index *csr_indptr, const Index *csr_indices,
-    const DType *csr_values, // three arrays of the sparse matrix's CSR format
-    const DType *A,          // assume row-major
-    const DType *B,          // assume row-major, assume transposed
-    DType *C_ref)            // assume row-major
+                          const Index *csr_indptr, const Index *csr_indices,
+                          const DType *A, // assume row-major
+                          const DType *B, // assume row-major, assume transposed
+                          DType *C_ref)   // assume row-major
 {
   for (int i = 0; i < M; i++) {
     Index lb = csr_indptr[i];
     Index hb = csr_indptr[i + 1];
     Index offset1, offset2;
-    DType acc = 0;
     for (int ptr = lb; ptr < hb; ptr++) {
+      DType acc = 0;
       offset1 = i * K;
       offset2 = csr_indices[ptr] * K;
       for (int k = 0; k < K; k++) {
         acc += A[k + offset1] * B[k + offset2];
       }
-      C_ref[ptr] = acc * csr_values[ptr];
-      acc = 0;
+      C_ref[ptr] = acc; // default csr value = 1
     }
   }
 }
