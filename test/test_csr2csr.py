@@ -2,7 +2,7 @@ import torch
 from torch import nn
 import os
 from scipy.io import mmread
-from dgsparse import spmm_sum
+# from dgsparse import spmm_sum
 from dgsparse import SparseTensor
 
 
