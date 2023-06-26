@@ -14,7 +14,7 @@ ARG CUDA
 ENV AUDITWHEEL_POLICY=${POLICY} AUDITWHEEL_ARCH=${PLATFORM} AUDITWHEEL_PLAT=${POLICY}_${PLATFORM} CUDA_VERSION=${CUDA}
 
 COPY install/entry.sh /install/entry.sh
-RUN bash /install/entry.sh 
+RUN bash /install/entry.sh
 
 # Environment variables
 ENV PATH=/usr/local/nvidia/bin:${PATH}
@@ -29,4 +29,3 @@ ENV CUDA_VISIBLE_DEVICES=0,1,2,3
 
 COPY install/build_wheel.sh /install/build_wheel.sh
 RUN bash /install/build_wheel.sh
-

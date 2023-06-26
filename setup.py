@@ -48,8 +48,20 @@ def get_extensions():
         undef_macros = []
         libraries = []
         extra_compile_args = {"cxx": ["-O2"]}
-        extra_link_args = [""] if WITH_SYMBOLS else ["-s", "-lmkl_gnu_thread", "-lmkl_intel_ilp64",
-                         "-lmkl_sequential", "-lmkl_core", "-lpthread", "-lm", "-ldl"]
+        extra_link_args = (
+            [""]
+            if WITH_SYMBOLS
+            else [
+                "-s",
+                "-lmkl_gnu_thread",
+                "-lmkl_intel_ilp64",
+                "-lmkl_sequential",
+                "-lmkl_core",
+                "-lpthread",
+                "-lm",
+                "-ldl",
+            ]
+        )
         extra_link_args += ["-lcusparse"] if suffix == "cuda" else []
 
         if suffix == "cuda":

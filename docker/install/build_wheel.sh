@@ -61,4 +61,3 @@ fix_wheel=*.whl
 for whl in $fix_wheel; do
     eval "auditwheel repair ${exclude_instruct} ${fix_wheel}"
 done
-

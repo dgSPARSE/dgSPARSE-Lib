@@ -63,4 +63,3 @@ else
 fi
 
 # docker run --rm -v $(pwd)/tests:/tests:ro dgsparse/${POLICY}_${PLATFORM}:${TAG} /tests/run_tests.sh
-
