@@ -37,3 +37,8 @@ clean:
 	$(MAKE) -C $(DIRS) clean
 	$(MAKE) -C $(EXAMPLE_DIR) clean
 	$(RM) -rf $(TARGET) $(OBJ_DIR)
+
+clean_comp:
+	rm -rf build/
+	rm -rf dgsparse.egg-info/
+	rm -rf dist/
