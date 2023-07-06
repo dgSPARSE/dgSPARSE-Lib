@@ -6,7 +6,7 @@ from dgsparse.tensor import SparseTensor
 # torch.ops.dgsparse.SpMM
 
 
-def spmm_sum(sparse: SparseTensor, dense: torch.Tensor) -> torch.Tensor:
+def spmm_sum(sparse: SparseTensor, dense: torch.Tensor, algorithm) -> torch.Tensor:
     r"""
     Matrix multiplication of a sparse tensor and a dense tensor with sum reduction.
 
@@ -20,7 +20,7 @@ def spmm_sum(sparse: SparseTensor, dense: torch.Tensor) -> torch.Tensor:
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse.spmm_sum(rowptr, col, values, dense, has_value)
+    return torch.ops.dgsparse.spmm_sum(rowptr, col, values, dense, has_value, algorithm)
 
 
 def spmm_mean(sparse: SparseTensor, dense: torch.Tensor) -> torch.Tensor:
