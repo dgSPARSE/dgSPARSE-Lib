@@ -190,7 +190,7 @@ Ndim_Residue:
 }
 
 template <typename Index, typename DType, typename access_t>
-__global__ void 
+__global__ void
 csrspmm_parreduce_nnzbalance_kernel(
                     const Index nr, const Index feature_size, const Index nnz_,
                     const Index rowPtr[], const Index colIdx[], const DType values[],

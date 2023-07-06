@@ -19,7 +19,7 @@ class SpMMSum:
         col = torch.from_numpy(sparsecoo.col).type(torch.int64)
         print(rowptr)
         print(colind)
-        #print(weight)
+        # print(weight)
         index = torch.cat((row.unsqueeze(0), col.unsqueeze(0)), 0)
         self.index = index.to(device)
         self.m = sparsecoo.shape[0]
@@ -42,7 +42,7 @@ class SpMMSum:
     def forward_check(self):
         out_check = torch.sparse.mm(self.tcsr, self.input_feature)
         out = spmm_sum(self.dcsr, self.input_feature, self.algorithm)
-        #print(out-out_check)
+        # print(out-out_check)
         assert torch.allclose(out, out_check) == True
 
     def backward_check(self):
@@ -60,15 +60,16 @@ def test_spmm():
     for i in range(iteration):
         gc = SpMMSum("../example/data/p2p-Gnutella31.mtx", 32, 0, 3)
         gc.forward_check()
-        print(f'{i} Forward Pass')
+        print(f"{i} Forward Pass")
         gc.backward_check()
-        print(f'{i} Backward Pass')
+        print(f"{i} Backward Pass")
     for i in range(iteration):
         gc = SpMMSum("../example/data/p2p-Gnutella31.mtx", 32, 0, 0)
         gc.forward_check()
-        print(f'{i} Forward Pass')
+        print(f"{i} Forward Pass")
         gc.backward_check()
-        print(f'{i} Backward Pass')
-    print('TEST PASS!')
+        print(f"{i} Backward Pass")
+    print("TEST PASS!")
+
 
 test_spmm()
