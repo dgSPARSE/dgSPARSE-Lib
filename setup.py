@@ -32,8 +32,6 @@ if os.getenv("FORCE_ONLY_CUDA", "0") == "1":
 if os.getenv("FORCE_ONLY_CPU", "0") == "1":
     suffices = ["cpu"]
 
-WITH_SYMBOLS = True if os.getenv("WITH_SYMBOLS", "0") == "1" else False
-
 print(f"Building with CUDA: {WITH_CUDA}, ", "CUDA_HOME:", CUDA_HOME)
 
 
@@ -48,20 +46,16 @@ def get_extensions():
         undef_macros = []
         libraries = []
         extra_compile_args = {"cxx": ["-O2"]}
-        extra_link_args = (
-            [""]
-            if WITH_SYMBOLS
-            else [
-                "-s",
-                "-lmkl_gnu_thread",
-                "-lmkl_intel_ilp64",
-                "-lmkl_sequential",
-                "-lmkl_core",
-                "-lpthread",
-                "-lm",
-                "-ldl",
-            ]
-        )
+        extra_link_args = [
+            "-s",
+            "-lmkl_gnu_thread",
+            "-lmkl_intel_ilp64",
+            "-lmkl_sequential",
+            "-lmkl_core",
+            "-lpthread",
+            "-lm",
+            "-ldl",
+        ]
         extra_link_args += ["-lcusparse"] if suffix == "cuda" else []
 
         if suffix == "cuda":
@@ -111,8 +105,8 @@ def get_extensions():
 
 install_requires = [
     "scipy",
-    "mkl-devel",
-    "mkl-service",
+    "mkl-devel", # mkl library
+    "mkl-service", # to support "import mkl"
 ]
 
 test_requires = [
