@@ -105,8 +105,8 @@ def get_extensions():
 
 install_requires = [
     "scipy",
-    "mkl-devel", # mkl library
-    "mkl-service", # to support "import mkl"
+    "mkl-devel",  # mkl library
+    "mkl-service",  # to support "import mkl"
 ]
 
 test_requires = [
