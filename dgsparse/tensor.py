@@ -23,7 +23,9 @@ class SparseTensor(object):
         # self.is_symmetry = is_symmetry
 
     @classmethod
-    def from_torch_sparse_csr_tensor(self, mat: torch.Tensor, has_value: bool = True, requires_grad: bool = False):
+    def from_torch_sparse_csr_tensor(
+        self, mat: torch.Tensor, has_value: bool = True, requires_grad: bool = False
+    ):
         if has_value:
             values = mat.values()
             if requires_grad:

@@ -43,4 +43,4 @@ from .tensor import SparseTensor
 
 # from .tensor import SparseTensor
 
-__all__ = ["spmm_sum", "spmm_max","spmm_min", "Storage", "SparseTensor"]
+__all__ = ["spmm_sum", "spmm_max", "spmm_min", "Storage", "SparseTensor"]

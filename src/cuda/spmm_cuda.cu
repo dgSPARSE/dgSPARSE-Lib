@@ -57,7 +57,7 @@ std::vector<torch::Tensor> spmm_cuda(torch::Tensor csrptr, torch::Tensor indices
               in_feat.data_ptr<float>(), out_feat.data_ptr<float>(), out_E.data_ptr<int>());
         });
       });
-      
+
     else
       SWITCH_REDUCEOP(reduce_op, REDUCE, {
         SWITCH_COMPUTEOP(compute_op, COMPUTE, {
@@ -252,7 +252,7 @@ torch::Tensor spmm_cuda_with_mask(torch::Tensor csrptr, torch::Tensor indices,
           Mdim_worker, Ndim_worker, csrptr.data_ptr<int>(),
           indices.data_ptr<int>(), edge_val.data_ptr<float>(),
           in_feat.data_ptr<float>(), E.data_ptr<int>(), out_feat.data_ptr<float>());
-      
+
     else
       csrspmm_seqreduce_rowbalance_with_mask_kernel<<<gridDim, blockDim>>>(
           Mdim_worker, Ndim_worker, csrptr.data_ptr<int>(),
@@ -260,7 +260,7 @@ torch::Tensor spmm_cuda_with_mask(torch::Tensor csrptr, torch::Tensor indices,
           E.data_ptr<int>(), out_feat.data_ptr<float>());
   }
 
-  return out_feat;                 
+  return out_feat;
 };
 
 torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,

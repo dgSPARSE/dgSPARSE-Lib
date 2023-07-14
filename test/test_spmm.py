@@ -29,8 +29,12 @@ class SpMMSum:
         self.weight = weight
 
         # prepare for torch and dgsparse
-        self.tcsr = torch.sparse_csr_tensor(rowptr, colind, weight, dtype=torch.float, requires_grad=True)
-        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(self.tcsr.detach(), True, requires_grad=True)
+        self.tcsr = torch.sparse_csr_tensor(
+            rowptr, colind, weight, dtype=torch.float, requires_grad=True
+        )
+        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
+            self.tcsr.detach(), True, requires_grad=True
+        )
         nodes = rowptr.size(0) - 1
         self.nodes = nodes
         self.in_dim = in_dim
@@ -56,11 +60,14 @@ class SpMMSum:
         out.sum().backward()
         dX = self.input_feature.grad
         dA_nnz = self.dcsr.storage._values.grad
-        dA = torch.sparse_csr_tensor(self.rowptr, self.colind, dA_nnz, dtype=torch.float)
+        dA = torch.sparse_csr_tensor(
+            self.rowptr, self.colind, dA_nnz, dtype=torch.float
+        )
         print(dA)
         print(dA_check)
         assert torch.allclose(dX, dX_check) == True
         assert torch.allclose(dA.values(), dA_check.values()) == True
+
 
 class SpMMMax:
     def __init__(self, path, in_dim, device, algorithm) -> None:
@@ -85,8 +92,12 @@ class SpMMMax:
         self.weight = weight
 
         # prepare for torch and dgsparse
-        self.tcsr = torch.sparse_csr_tensor(rowptr, colind, weight, dtype=torch.float, requires_grad=True)
-        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(self.tcsr.detach(), True, requires_grad=True)
+        self.tcsr = torch.sparse_csr_tensor(
+            rowptr, colind, weight, dtype=torch.float, requires_grad=True
+        )
+        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
+            self.tcsr.detach(), True, requires_grad=True
+        )
         nodes = rowptr.size(0) - 1
         self.nodes = nodes
         self.in_dim = in_dim
@@ -98,19 +109,24 @@ class SpMMMax:
         # don't use copy to device, or may can not implement backward_check
 
     def forward_check(self):
-        out_check = torch.sparse.mm(self.tcsr.cpu(), self.input_feature.cpu(), 'max').cuda()
+        out_check = torch.sparse.mm(
+            self.tcsr.cpu(), self.input_feature.cpu(), "max"
+        ).cuda()
         out = spmm_max(self.dcsr, self.input_feature, self.algorithm)
-        print(out-out_check)
+        print(out - out_check)
         assert torch.allclose(out, out_check) == True
 
     def backward_check(self):
-        out_check = torch.sparse.mm(self.tcsr.cpu(), self.input_feature.cpu(), 'max').cuda()
+        out_check = torch.sparse.mm(
+            self.tcsr.cpu(), self.input_feature.cpu(), "max"
+        ).cuda()
         out_check.sum().backward()
         dX_check = self.input_feature.grad
         out = spmm_max(self.dcsr, self.input_feature, self.algorithm)
         out.sum().backward()
         dX = self.input_feature.grad
         assert torch.allclose(dX, dX_check) == True
+
 
 class SpMMMin:
     def __init__(self, path, in_dim, device, algorithm) -> None:
@@ -133,8 +149,12 @@ class SpMMMin:
         self.weight = weight
 
         # prepare for torch and dgsparse
-        self.tcsr = torch.sparse_csr_tensor(rowptr, colind, weight, dtype=torch.float, requires_grad=True)
-        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(self.tcsr.detach(), True, requires_grad=True)
+        self.tcsr = torch.sparse_csr_tensor(
+            rowptr, colind, weight, dtype=torch.float, requires_grad=True
+        )
+        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
+            self.tcsr.detach(), True, requires_grad=True
+        )
         nodes = rowptr.size(0) - 1
         self.nodes = nodes
         self.in_dim = in_dim
@@ -146,19 +166,24 @@ class SpMMMin:
         # don't use copy to device, or may can not implement backward_check
 
     def forward_check(self):
-        out_check = torch.sparse.mm(self.tcsr.cpu(), self.input_feature.cpu(), 'min').cuda()
+        out_check = torch.sparse.mm(
+            self.tcsr.cpu(), self.input_feature.cpu(), "min"
+        ).cuda()
         out = spmm_min(self.dcsr, self.input_feature, self.algorithm)
-        print(out-out_check)
+        print(out - out_check)
         assert torch.allclose(out, out_check) == True
 
     def backward_check(self):
-        out_check = torch.sparse.mm(self.tcsr.cpu(), self.input_feature.cpu(), 'min').cuda()
+        out_check = torch.sparse.mm(
+            self.tcsr.cpu(), self.input_feature.cpu(), "min"
+        ).cuda()
         out_check.sum().backward()
         dX_check = self.input_feature.grad
         out = spmm_min(self.dcsr, self.input_feature, self.algorithm)
         out.sum().backward()
         dX = self.input_feature.grad
         assert torch.allclose(dX, dX_check) == True
+
 
 def test_spmm():
     iteration = 10
