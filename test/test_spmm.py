@@ -168,7 +168,3 @@ def test_spmm():
         print(f"{i} Forward Pass")
         gc.backward_check()
         print(f"{i} Backward Pass")
-    print("TEST PASS!")
-
-
-test_spmm()

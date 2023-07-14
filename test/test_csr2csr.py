@@ -46,6 +46,3 @@ def test_csr2csc():
     # cpu check
     gc = Csr2Csc("../example/data/p2p-Gnutella31.mtx", "cpu")
     gc.check()
-    print("TEST PASS!")
-
-
