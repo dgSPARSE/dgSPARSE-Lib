@@ -49,4 +49,3 @@ def test_csr2csc():
     print("TEST PASS!")
 
 
-test_csr2csc()
