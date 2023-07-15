@@ -1,10 +1,16 @@
 #include <torch/extension.h>
 #include <tuple>
 #include <vector>
+#include "../../include/cuda/gspmm.cuh"
 
-torch::Tensor spmm_cuda(torch::Tensor csrptr, torch::Tensor indices,
-                        torch::Tensor edge_val, torch::Tensor in_feat,
-                        bool has_value, int64_t algorithm);
+std::vector<torch::Tensor> spmm_cuda(torch::Tensor csrptr, torch::Tensor indices,
+                                     torch::Tensor edge_val, torch::Tensor in_feat, bool has_value,
+                                     int64_t algorithm, REDUCEOP reduce_op, COMPUTEOP compute_op);
+
+torch::Tensor spmm_cuda_with_mask(torch::Tensor csrptr, torch::Tensor indices,
+                                  torch::Tensor edge_val, torch::Tensor in_feat, torch::Tensor E,
+                                  bool has_value,
+                                  int64_t algorithm, REDUCEOP reduce_op, COMPUTEOP compute_op);
 
 torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
                              torch::Tensor D1, torch::Tensor D2);
