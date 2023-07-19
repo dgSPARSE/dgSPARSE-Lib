@@ -162,9 +162,13 @@ int main(int argc, char *argv[]) {
   //
   // Run SDDMM and check result
   //
+  sddmm_cuda_csr(M, K, nnz, csr_indptr_d, csr_indices_d, A_d, B_d, C_d);
+  CUDA_CHECK(cudaMemcpy(csr_values_h, C_d, nnz * sizeof(float),
+                        cudaMemcpyDeviceToHost));
+  correct = check_result<float>(nnz, 1, csr_values_h, C_ref);
   CUDA_CHECK(cudaMemset(C_d, 0x0, sizeof(float) * nnz));
   if (correct) {
-    // benchmark GE-SpMM performance
+    // benchmark PredS SDDMM performance
     GpuTimer gpu_timer;
     int warmup_iter = 10;
     int repeat_iter = 100;
