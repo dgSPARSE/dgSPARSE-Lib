@@ -25,6 +25,7 @@ torch::Tensor spconv_fwd_fused(torch::Tensor in_feats, torch::Tensor kernel,
     throw std::invalid_argument("Input feature size and kernel size mismatch");
   }
   int out_channel = kernel.size(2);
+  auto devid = in_feats.device().index();
   auto options =
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
   auto out_feats = torch::empty({out_nnz, out_channel}, options);
@@ -184,145 +185,6 @@ torch::Tensor spconv_fwd_fused(torch::Tensor in_feats, torch::Tensor kernel,
   return out_feats;
 }
 
-torch::Tensor spconv_fwd_fused(torch::Tensor in_feats, torch::Tensor kernel,
-                               torch::Tensor kpos, torch::Tensor qkpos,
-                               torch::Tensor in_map, torch::Tensor out_map,
-                               int64_t out_nnz, int64_t sum_nnz,
-                               bool separate_mid, bool arch80) {
-
-  int in_nnz = in_feats.size(0);
-  int in_channel = in_feats.size(1);
-  if (in_feats.size(1) != kernel.size(1)) {
-    throw std::invalid_argument("Input feature size and kernel size mismatch");
-  }
-  int out_channel = kernel.size(2);
-  auto options =
-      torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
-  auto out_feats = torch::empty({out_nnz, out_channel}, options);
-
-  int k_vol = kernel.size(0);
-
-  bool data_type_half = in_feats.scalar_type() == at::ScalarType::Half;
-
-  int *in_map_ptr = in_map.data_ptr<int>();
-  int *out_map_ptr = out_map.data_ptr<int>();
-  int *kpos_ptr = kernel_pos.data_ptr<int>();
-
-  int mid_weight_id = (k_vol % 2 == 1) ? k_vol / 2 : 0;
-
-  // cublas setup
-  float alpha = 1.0;
-  float beta = 1.0;
-  torch::Tensor alpha_half = torch::ones({1}, dtype(at::ScalarType::Half));
-  torch::Tensor beta_half = torch::ones({1}, dtype(at::ScalarType::Half));
-
-  cublasComputeType_t ComputeType;
-  cudaDataType_t DataType;
-  if (data_type_half) {
-    ComputeType = CUBLAS_COMPUTE_16F;
-    DataType = CUDA_R_16F;
-  } else {
-    ComputeType = arch80 ? CUBLAS_COMPUTE_32F_FAST_TF32 : CUBLAS_COMPUTE_32F;
-    DataType = CUDA_R_32F;
-  }
-
-  cublasHandle_t cublasH = at::cuda::getCurrentCUDABlasHandle();
-  cublasSetStream(cublasH, 0);
-  cublasSetMathMode(cublasH, CUBLAS_TENSOR_OP_MATH);
-
-  /********************************************************************/
-  // loop over all kernel offsets
-  int cur_idx = 0;
-  // int stream_id = 0;
-  for (int k = 0; k < k_vol; k++) {
-    int cur_nnz = kernel_nnz.data_ptr<int>()[k];
-
-    if (cur_nnz == 0) {
-      continue;
-    }
-
-    size_t gridnum_x = CEIL(out_channel, 32);
-    size_t gridnum_y = CEIL(cur_nnz, 32);
-
-    if (data_type_half) {
-      if (in_channel % 4 == 0 && out_channel % 4 == 0) {
-        _fgms_seq_fp16<32, 4, 8, 16, 16, 16, 4, 2, 2>
-            <<<dim3(gridnum_x, gridnum_y, 1), dim3(8, 32, 1)>>>(
-                cur_nnz, in_channel, out_channel,
-                reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()),
-                reinterpret_cast<half *>(kernel.data_ptr<at::Half>() +
-                                         k * in_channel * out_channel),
-                reinterpret_cast<half *>(out_feats.data_ptr<at::Half>()),
-                &in_map_ptr[cur_idx], &out_map_ptr[cur_idx]);
-      } else {
-        _fgms_seq_fp16_1<16, 4, 8>
-            <<<dim3(CEIL(out_channel, 16), CEIL(cur_nnz, 16), 1),
-               dim3(16, 16, 1)>>>(
-                cur_nnz, in_channel, out_channel,
-                reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()),
-                reinterpret_cast<half *>(kernel.data_ptr<at::Half>() +
-                                         k * in_channel * out_channel),
-                reinterpret_cast<half *>(out_feats.data_ptr<at::Half>()),
-                &in_map_ptr[cur_idx], &out_map_ptr[cur_idx]);
-      }
-    } else {
-      if (in_channel % 4 == 0 && out_channel % 4 == 0) {
-        if (arch80) {
-          _fgms_seq_tf32<32, 4, 8, 16, 8, 16, 4, 2, 2>
-              <<<dim3(gridnum_x, gridnum_y, 1), dim3(8, 32, 1)>>>(
-                  cur_nnz, in_channel, out_channel, in_feats.data_ptr<float>(),
-                  (kernel.data_ptr<float>() + k * in_channel * out_channel),
-                  out_feats.data_ptr<float>(), &in_map_ptr[cur_idx],
-                  &out_map_ptr[cur_idx]);
-        } else {
-          _fgms_seq_fp32<32, 4, 8>
-              <<<dim3(gridnum_x, gridnum_y, 1), dim3(8, 32, 1)>>>(
-                  cur_nnz, in_channel, out_channel, in_feats.data_ptr<float>(),
-                  (kernel.data_ptr<float>() + k * in_channel * out_channel),
-                  out_feats.data_ptr<float>(), &in_map_ptr[cur_idx],
-                  &out_map_ptr[cur_idx]);
-        }
-      } else {
-        _fgms_seq_fp32_1<16, 4, 8>
-            <<<dim3(CEIL(out_channel, 16), CEIL(cur_nnz, 16), 1),
-               dim3(16, 16, 1)>>>(
-                cur_nnz, in_channel, out_channel, in_feats.data_ptr<float>(),
-                (kernel.data_ptr<float>() + k * in_channel * out_channel),
-                out_feats.data_ptr<float>(), &in_map_ptr[cur_idx],
-                &out_map_ptr[cur_idx]);
-      }
-    }
-
-    cur_idx += cur_nnz;
-  }
-
-  // put behind to avoid AtomicAdd in GMS kernels
-  if (separate_mid) {
-    // computation for w[0, 0, 0]
-    if (data_type_half) {
-      cublasGemmEx(
-          cublasH, CUBLAS_OP_N, CUBLAS_OP_N, out_channel, in_nnz, in_channel,
-          reinterpret_cast<half *>(alpha_half.data_ptr<at::Half>()),
-          reinterpret_cast<half *>(kernel.data_ptr<at::Half>() +
-                                   mid_weight_id * in_channel * out_channel),
-          DataType, out_channel,
-          reinterpret_cast<half *>(in_feats.data_ptr<at::Half>()), DataType,
-          in_channel, reinterpret_cast<half *>(beta_half.data_ptr<at::Half>()),
-          reinterpret_cast<half *>(out_feats.data_ptr<at::Half>()), DataType,
-          out_channel, ComputeType, CUBLAS_GEMM_DEFAULT_TENSOR_OP);
-    } else {
-      cublasGemmEx(
-          cublasH, CUBLAS_OP_N, CUBLAS_OP_N, out_channel, in_nnz, in_channel,
-          &alpha,
-          (kernel.data_ptr<float>() + mid_weight_id * in_channel * out_channel),
-          DataType, out_channel, in_feats.data_ptr<float>(), DataType,
-          in_channel, &beta, out_feats.data_ptr<float>(), DataType, out_channel,
-          ComputeType, CUBLAS_GEMM_DEFAULT_TENSOR_OP);
-    }
-  }
-  return out_feats;
-}
-
 std::tuple<torch::Tensor, torch::Tensor>
 spconv_bwd_fused(torch::Tensor out_feats_grad, torch::Tensor in_feats,
                  torch::Tensor kernel, torch::Tensor kpos, torch::Tensor qkpos,
@@ -338,6 +200,7 @@ spconv_bwd_fused(torch::Tensor out_feats_grad, torch::Tensor in_feats,
 
   int out_channel = kernel.size(2);
   int k_vol = kernel.size(0);
+  auto devid = in_feats.device().index();
 
   auto options =
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
