@@ -18,6 +18,9 @@ torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
 torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
                              torch::Tensor D1, torch::Tensor D2);
 
+torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr, torch::Tensor colind,
+                                       torch::Tensor D1, torch::Tensor D2, torch::Tensor E);
+
 std::vector<torch::Tensor> csr2csc_cuda(torch::Tensor csrRowPtr,
                                         torch::Tensor csrColInd,
                                         torch::Tensor csrVal);

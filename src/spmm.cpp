@@ -49,7 +49,7 @@ public:
     auto grad_value = torch::Tensor();
     if (has_value > 0 &&
         torch::autograd::any_variable_requires_grad({values})) {
-      grad_value = sddmm_cuda_csr(rowptr, col, dense, grad_out);
+      grad_value = sddmm_cuda_csr(rowptr, col, grad_out, dense);
     }
 
     auto grad_mat = std::vector<torch::Tensor>();
@@ -116,10 +116,7 @@ public:
     auto grad_value = torch::Tensor();
     if (has_value > 0 &&
         torch::autograd::any_variable_requires_grad({values})) {
-      //grad_value = sddmm_cuda_csr(rowptr, col, dense, grad_out);
-      auto options = torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, dense.device().index());
-      grad_value = torch::ones({1,147892}, options);
-      //grad_value = spmm_cuda_with_mask(rowptr, col, dense, grad_out, E, has_value, algorithm, MAX, ADD);
+      grad_value = sddmm_cuda_csr_with_mask(rowptr, col, grad_out, dense, E);
     }
 
     auto grad_mat = torch::Tensor();
@@ -171,7 +168,7 @@ public:
     auto grad_value = torch::Tensor();
     if (has_value > 0 &&
         torch::autograd::any_variable_requires_grad({values})) {
-      grad_value = spmm_cuda_with_mask(rowptr, col, dense, grad_out, E, has_value, algorithm, MIN, ADD);
+      grad_value = sddmm_cuda_csr_with_mask(rowptr, col, grad_out, dense, E);
     }
 
     auto grad_mat = torch::Tensor();
