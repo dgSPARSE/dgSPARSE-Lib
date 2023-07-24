@@ -315,7 +315,7 @@ torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
   auto devid = D1.device().index();
   auto options =
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
-  auto out = torch::zeros({nnz}, options);
+  auto out = torch::empty({1, nnz}, options);
   if ((k % 2) == 0) {
     sddmmCSR2Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(16, 4, 1)>>>(
         m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
@@ -325,6 +325,25 @@ torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
         m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
         D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>());
   }
+  return out;
+}
+
+torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr, torch::Tensor colind,
+                                       torch::Tensor D1, torch::Tensor D2, torch::Tensor E) {
+  D1 = D1.contiguous();
+  D2 = D2.contiguous();
+  E = E.contiguous();
+  const auto m = D1.size(0);
+  const auto k = D1.size(1);
+  const auto nnz = colind.size(0);
+  auto devid = D1.device().index();
+  auto options =
+      torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
+  auto out = torch::empty({1, nnz}, options);
+  printf("[SDDMM_WITH_MASK].\n");
+  sddmmCSR1Scale_with_mask<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
+      m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
+      D1.data_ptr<float>(), D2.data_ptr<float>(), E.data_ptr<int>(), out.data_ptr<float>());
   return out;
 }
 
