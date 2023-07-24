@@ -6,6 +6,7 @@ from dgsparse import spmm_sum, spmm_max, spmm_min
 from dgsparse import SparseTensor
 import torch_sparse
 
+
 class SpMMSum:
     def __init__(self, path, in_dim, device, algorithm) -> None:
         sparsecsr = mmread(path).astype("float32").tocsr()
@@ -32,7 +33,7 @@ class SpMMSum:
         self.tcsr = torch.sparse_csr_tensor(
             rowptr, colind, weight, dtype=torch.float, requires_grad=True
         )
-        
+
         self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
             self.tcsr.clone().detach(), True, requires_grad=True
         )
@@ -63,7 +64,9 @@ class SpMMSum:
         dX = self.input_feature.grad
         dA_nnz = self.dcsr.storage._values.grad
 
-        pyg_check = torch_sparse.spmm(self.index, self.weight, self.m, self.n, self.input_feature)
+        pyg_check = torch_sparse.spmm(
+            self.index, self.weight, self.m, self.n, self.input_feature
+        )
         pyg_check.sum().backward()
 
         assert torch.allclose(dX, dX_check) == True
@@ -133,7 +136,7 @@ class SpMMMax:
         )
         print(dA)
         print(dA_check)
-        print(dA.values()-dA_check.values())
+        print(dA.values() - dA_check.values())
         assert torch.allclose(dX, dX_check) == True
         assert torch.allclose(dA.values(), dA_check.values()) == True
 

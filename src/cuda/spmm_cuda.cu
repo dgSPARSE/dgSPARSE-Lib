@@ -332,7 +332,7 @@ torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr, torch::Tensor colin
                                        torch::Tensor D1, torch::Tensor D2, torch::Tensor E) {
   D1 = D1.contiguous();
   D2 = D2.contiguous();
-  E = E.contiguous(); 
+  E = E.contiguous();
   const auto m = D1.size(0);
   const auto k = D1.size(1);
   const auto nnz = colind.size(0);
