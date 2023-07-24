@@ -2,7 +2,7 @@ import torch
 import os
 import argparse
 import time
-
+import dgsparse
 
 def kpos_quantized(knnz: torch.Tensor, kpos: torch.Tensor, k_vol: int, q: int):
     kpos_quantized = torch.zeros_like(kpos)

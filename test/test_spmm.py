@@ -4,7 +4,7 @@ import os
 from scipy.io import mmread
 from dgsparse import spmm_sum, spmm_max, spmm_min
 from dgsparse import SparseTensor
-
+import torch_sparse
 
 class SpMMSum:
     def __init__(self, path, in_dim, device, algorithm) -> None:
@@ -26,14 +26,15 @@ class SpMMSum:
         self.index = index.to(device)
         self.m = sparsecoo.shape[0]
         self.n = sparsecoo.shape[1]
-        self.weight = weight
+        self.weight = weight.requires_grad_()
 
         # prepare for torch and dgsparse
         self.tcsr = torch.sparse_csr_tensor(
             rowptr, colind, weight, dtype=torch.float, requires_grad=True
         )
+        
         self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
-            self.tcsr.detach(), True, requires_grad=True
+            self.tcsr.clone().detach(), True, requires_grad=True
         )
         nodes = rowptr.size(0) - 1
         self.nodes = nodes
@@ -57,16 +58,16 @@ class SpMMSum:
         dX_check = self.input_feature.grad
         dA_check = self.tcsr.grad
         out = spmm_sum(self.dcsr, self.input_feature, self.algorithm)
+        out.retain_grad()
         out.sum().backward()
         dX = self.input_feature.grad
         dA_nnz = self.dcsr.storage._values.grad
-        dA = torch.sparse_csr_tensor(
-            self.rowptr, self.colind, dA_nnz, dtype=torch.float
-        )
-        print(dA)
-        print(dA_check)
+
+        pyg_check = torch_sparse.spmm(self.index, self.weight, self.m, self.n, self.input_feature)
+        pyg_check.sum().backward()
+
         assert torch.allclose(dX, dX_check) == True
-        assert torch.allclose(dA.values(), dA_check.values()) == True
+        assert torch.allclose(dA_nnz, dA_check.values()) == True
 
 
 class SpMMMax:

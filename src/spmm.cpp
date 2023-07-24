@@ -30,7 +30,8 @@ public:
                                torch::Tensor rowptr, torch::Tensor col,
                                torch::Tensor values, torch::Tensor dense,
                                bool has_value, int64_t algorithm) {
-    auto out = spmm_cuda(rowptr, col, values, dense, has_value, algorithm, SUM, ADD);
+    auto out =
+        spmm_cuda(rowptr, col, values, dense, has_value, algorithm, SUM, ADD);
     ctx->saved_data["has_value"] = has_value;
     ctx->saved_data["algorithm"] = algorithm;
     ctx->save_for_backward({rowptr, col, values, dense});
@@ -62,10 +63,11 @@ public:
       colptr = ten_vec[0];
       row = ten_vec[1];
       t_values = ten_vec[2];
-      grad_mat = spmm_cuda(colptr, row, t_values, grad_out, has_value, algorithm, SUM, ADD);
+      grad_mat = spmm_cuda(colptr, row, t_values, grad_out, has_value,
+                           algorithm, SUM, ADD);
     }
-    return {torch::Tensor(), torch::Tensor(), grad_value, grad_mat[0],
-            torch::Tensor(), torch::Tensor()};
+    return {torch::Tensor(), torch::Tensor(), grad_value,
+            grad_mat[0],     torch::Tensor(), torch::Tensor()};
     //       has_value};
   }
 };
@@ -90,14 +92,14 @@ std::vector<torch::Tensor> csr2csc(int64_t rows, int64_t cols,
   }
 }
 
-
 class SpMMMax : public torch::autograd::Function<SpMMMax> {
 public:
   static torch::Tensor forward(torch::autograd::AutogradContext *ctx,
                                torch::Tensor rowptr, torch::Tensor col,
                                torch::Tensor values, torch::Tensor dense,
                                bool has_value, int64_t algorithm) {
-    auto out = spmm_cuda(rowptr, col, values, dense, has_value, algorithm, MAX, ADD);
+    auto out =
+        spmm_cuda(rowptr, col, values, dense, has_value, algorithm, MAX, ADD);
     ctx->saved_data["has_value"] = has_value;
     ctx->saved_data["algorithm"] = algorithm;
     ctx->save_for_backward({rowptr, col, values, dense, out[1]});
@@ -111,7 +113,8 @@ public:
     auto has_value = ctx->saved_data["has_value"].toBool();
     auto algorithm = ctx->saved_data["algorithm"].toInt();
     auto saved = ctx->get_saved_variables();
-    auto rowptr = saved[0], col = saved[1], values = saved[2], dense = saved[3], E = saved[4];
+    auto rowptr = saved[0], col = saved[1], values = saved[2], dense = saved[3],
+         E = saved[4];
 
     auto grad_value = torch::Tensor();
     if (has_value > 0 &&
@@ -129,10 +132,11 @@ public:
       colptr = ten_vec[0];
       row = ten_vec[1];
       t_values = ten_vec[2];
-      grad_mat = spmm_cuda_with_mask(colptr, row, t_values, grad_out, E, has_value, algorithm, MAX, ADD);
+      grad_mat = spmm_cuda_with_mask(colptr, row, t_values, grad_out, E,
+                                     has_value, algorithm, MAX, ADD);
     }
-    return {torch::Tensor(), torch::Tensor(), grad_value, grad_mat,
-            torch::Tensor(), torch::Tensor()};
+    return {torch::Tensor(), torch::Tensor(), grad_value,
+            grad_mat,        torch::Tensor(), torch::Tensor()};
     //       has_value};
   }
 };
@@ -149,7 +153,8 @@ public:
                                torch::Tensor rowptr, torch::Tensor col,
                                torch::Tensor values, torch::Tensor dense,
                                bool has_value, int64_t algorithm) {
-    auto out = spmm_cuda(rowptr, col, values, dense, has_value, algorithm, MIN, ADD);
+    auto out =
+        spmm_cuda(rowptr, col, values, dense, has_value, algorithm, MIN, ADD);
     ctx->saved_data["has_value"] = has_value;
     ctx->saved_data["algorithm"] = algorithm;
     ctx->save_for_backward({rowptr, col, values, dense, out[1]});
@@ -163,7 +168,8 @@ public:
     auto has_value = ctx->saved_data["has_value"].toBool();
     auto algorithm = ctx->saved_data["algorithm"].toInt();
     auto saved = ctx->get_saved_variables();
-    auto rowptr = saved[0], col = saved[1], values = saved[2], dense = saved[3], E = saved[4];
+    auto rowptr = saved[0], col = saved[1], values = saved[2], dense = saved[3],
+         E = saved[4];
 
     auto grad_value = torch::Tensor();
     if (has_value > 0 &&
@@ -181,10 +187,11 @@ public:
       colptr = ten_vec[0];
       row = ten_vec[1];
       t_values = ten_vec[2];
-      grad_mat = spmm_cuda_with_mask(colptr, row, t_values, grad_out, E, has_value, algorithm, MIN, ADD);
+      grad_mat = spmm_cuda_with_mask(colptr, row, t_values, grad_out, E,
+                                     has_value, algorithm, MIN, ADD);
     }
-    return {torch::Tensor(), torch::Tensor(), grad_value, grad_mat,
-            torch::Tensor(), torch::Tensor()};
+    return {torch::Tensor(), torch::Tensor(), grad_value,
+            grad_mat,        torch::Tensor(), torch::Tensor()};
     //       has_value};
   }
 };
@@ -193,6 +200,11 @@ torch::Tensor spmm_min(torch::Tensor rowptr, torch::Tensor col,
                        torch::Tensor values, torch::Tensor dense,
                        bool has_value, int64_t algorithm) {
   return SpMMMin::apply(rowptr, col, values, dense, has_value, algorithm);
+}
+
+torch::Tensor sddmm_csr(torch::Tensor rowptr, torch::Tensor colind,
+                        torch::Tensor D1, torch::Tensor D2) {
+  return sddmm_cuda_csr(rowptr, colind, D1, D2);
 }
 
 /*
@@ -212,4 +224,5 @@ TORCH_LIBRARY(dgsparse, m) {
   m.def("spmm_max", &spmm_max);
   m.def("spmm_min", &spmm_min);
   m.def("csr2csc", &csr2csc);
+  m.def("sddmm_csr", &sddmm_csr);
 }
