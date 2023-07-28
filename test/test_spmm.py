@@ -279,7 +279,7 @@ class SpMMMean:
 def test_spmm():
     iteration = 10
     for i in range(iteration):
-        gc = SpMMSum("../example/data/p2p-Gnutella31.mtx", 32, 0, 0)
+        gc = SpMMMean("../example/data/p2p-Gnutella31.mtx", 32, 0, 0)
         gc.forward_check()
         print(f"{i} Forward Pass")
         gc.backward_check()

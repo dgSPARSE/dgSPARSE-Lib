@@ -258,7 +258,7 @@ __global__ void sddmmCOO1Scale(int D_kcols, const unsigned long Size,
 __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
                                const unsigned long Size, int *S_csrRowPtr,
                                int *S_csrColInd, float *D1_dnVal,
-                               float *D2_dnVal, float *O_csrVal)
+                               float *D2_dnVal, float *O_csrVal, bool ismean)
 {
   int eid = (blockIdx.x << 4) + (threadIdx.y << 2);
   int cid = threadIdx.x << 1;
@@ -267,12 +267,17 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
   {
     float multi[4] = {0, 0, 0, 0};
     int offset1[4], offset2[4];
+    int length[4] = {1, 1, 1, 1};
     float2 D1tmp[4], D2tmp[4];
     Load<int4, int>(offset2, S_csrColInd, eid);
     offset1[0] = findRow(S_csrRowPtr, eid, 0, S_mrows);
     offset1[3] = findRow(S_csrRowPtr, eid + 3, offset1[0], S_mrows);
     offset1[1] = findRow(S_csrRowPtr, eid + 1, offset1[0], offset1[3]);
     offset1[2] = findRow(S_csrRowPtr, eid + 2, offset1[1], offset1[3]);
+    for (int i = 0; i < 4; i++)
+    {
+      length[i] = S_csrRowPtr[offset1[i] + 1] - S_csrRowPtr[offset1[i]];
+    }
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
@@ -300,6 +305,16 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
       }
     }
     AllReduce4<float>(multi, 8, 32);
+    if (ismean)
+    {
+      for (int i = 0; i < 4; ++i)
+      {
+        if (length[i] > 0)
+        {
+          multi[i] /= length[i];
+        }
+      }
+    }
     if (threadIdx.x == 0)
     {
       Store<float4, float>(O_csrVal, multi, eid);
@@ -309,6 +324,7 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
     int offset1 = findRow(S_csrRowPtr, eid, 0, S_mrows) * D_kcols;
+    int length = S_csrRowPtr[offset1 / D_kcols + 1] - S_csrRowPtr[offset1 / D_kcols];
     int offset2 = S_csrColInd[eid] * D_kcols;
     float multi = 0;
     int off1 = cid = (threadIdx.y << 4) + threadIdx.x;
@@ -334,6 +350,10 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
     for (int stride = 16; stride > 0; stride >>= 1)
     {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+    }
+    if (ismean && length > 0)
+    {
+      multi /= length;
     }
     if (threadIdx.x == 0 && threadIdx.y == 0)
     {
@@ -436,7 +456,7 @@ __global__ void sddmmCSR1Scale(const int S_mrows, int D_kcols,
     {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
     }
-    if (ismean && length != 0)
+    if (ismean && length > 0)
     {
       multi /= length;
     }

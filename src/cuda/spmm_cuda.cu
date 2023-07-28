@@ -368,18 +368,15 @@ torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
   auto options =
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
   auto out = torch::empty({1, nnz}, options);
-  // if ((k % 2) == 0) {
-  //   sddmmCSR2Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(16, 4, 1)>>>(
-  //       m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-  //       D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>());
-  // } else {
-  //   sddmmCSR1Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
-  //       m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-  //       D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>());
-  // }
-  sddmmCSR1Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
-      m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-      D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(), ismean);
+  if ((k % 2) == 0) {
+    sddmmCSR2Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(16, 4, 1)>>>(
+        m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
+        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(), ismean);
+  } else {
+    sddmmCSR1Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
+        m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
+        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(), ismean);
+  }
   return out;
 }
 
