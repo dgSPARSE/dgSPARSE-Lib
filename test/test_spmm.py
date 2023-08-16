@@ -206,7 +206,8 @@ class SpMMMin:
         )
         assert torch.allclose(dX, dX_check) == True
         assert torch.allclose(dA.values(), dA_check.values()) == True
-    
+
+
 class SpMMMean:
     def __init__(self, path, in_dim, device, algorithm) -> None:
         sparsecsr = mmread(path).astype("float32").tocsr()
@@ -284,5 +285,6 @@ def test_spmm():
         print(f"{i} Forward Pass")
         gc.backward_check()
         print(f"{i} Backward Pass")
+
 
 test_spmm()

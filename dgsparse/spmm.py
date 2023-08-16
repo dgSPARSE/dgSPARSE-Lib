@@ -20,7 +20,9 @@ def spmm_sum(sparse: SparseTensor, dense: torch.Tensor, algorithm) -> torch.Tens
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse_spmm.spmm_sum(rowptr, col, values, dense, has_value, algorithm)
+    return torch.ops.dgsparse_spmm.spmm_sum(
+        rowptr, col, values, dense, has_value, algorithm
+    )
 
 
 def spmm_mean(sparse: SparseTensor, dense: torch.Tensor, algorithm) -> torch.Tensor:
@@ -56,7 +58,9 @@ def spmm_max(sparse: SparseTensor, dense: torch.Tensor, algorithm) -> torch.Tens
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse_spmm.spmm_max(rowptr, col, values, dense, has_value, algorithm)
+    return torch.ops.dgsparse_spmm.spmm_max(
+        rowptr, col, values, dense, has_value, algorithm
+    )
 
 
 def spmm_min(sparse: SparseTensor, dense: torch.Tensor, algorithm) -> torch.Tensor:
@@ -73,4 +77,6 @@ def spmm_min(sparse: SparseTensor, dense: torch.Tensor, algorithm) -> torch.Tens
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse_spmm.spmm_min(rowptr, col, values, dense, has_value, algorithm)
+    return torch.ops.dgsparse_spmm.spmm_min(
+        rowptr, col, values, dense, has_value, algorithm
+    )
