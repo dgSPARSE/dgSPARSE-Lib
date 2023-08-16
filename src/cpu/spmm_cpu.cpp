@@ -1,5 +1,4 @@
 #include "../../include/cpu/csr2csc.h"
-#include "cpu_kernel.h"
 #include <iostream>
 
 std::vector<torch::Tensor> csr2csc_cpu(int64_t rows, int64_t cols,

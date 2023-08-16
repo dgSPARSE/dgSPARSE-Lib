@@ -2,15 +2,17 @@
 #include "../../include/cuda/cuda_util.cuh"
 #include "../../include/cuda/sddmm_cuda.cuh"
 #include "../../include/cuda/spmm_cuda.cuh"
-#include "cuda_kernel.h"
+#include "../../include/gspmm.h"
 #include <c10/cuda/CUDAGuard.h>
 #include <iostream>
+#include <torch/extension.h>
+#include <tuple>
+#include <vector>
 
 std::vector<torch::Tensor>
 spmm_cuda(torch::Tensor csrptr, torch::Tensor indices, torch::Tensor edge_val,
           torch::Tensor in_feat, bool has_value, int64_t algorithm,
-          REDUCEOP reduce_op, COMPUTEOP compute_op)
-{
+          REDUCEOP reduce_op, COMPUTEOP compute_op) {
   //   assertTensor(csrptr, torch::kInt32);
   //   assertTensor(indices, torch::kInt32);
   //   assertTensor(in_feat, torch::kFloat32);
@@ -29,10 +31,7 @@ spmm_cuda(torch::Tensor csrptr, torch::Tensor indices, torch::Tensor edge_val,
       torch::TensorOptions().dtype(torch::kInt32).device(torch::kCUDA, devid);
   auto out_E = torch::empty({v, f}, options_E);
 
-  printf("[SpMM] Select Algorithm %0d.\n", algorithm);
-
-  if (algorithm == 0)
-  {
+  if (algorithm == 0) {
     int Mdim_worker = csrptr.size(0) - 1;
     // int v = Mdim_worker;
     int Ndim_worker = in_feat.size(1);
@@ -72,9 +71,7 @@ spmm_cuda(torch::Tensor csrptr, torch::Tensor indices, torch::Tensor edge_val,
                   out_E.data_ptr<int>());
         });
       });
-  }
-  else if (algorithm == 1)
-  {
+  } else if (algorithm == 1) {
     // int Mdim_worker = csrptr.size(0) - 1;
     // int v = Mdim_worker;
     int Nnzdim_worker = indices.size(0);
@@ -114,14 +111,11 @@ spmm_cuda(torch::Tensor csrptr, torch::Tensor indices, torch::Tensor edge_val,
                   out_E.data_ptr<int>());
         });
       });
-  }
-  else if (algorithm == 2)
-  {
+  } else if (algorithm == 2) {
     // number of parallel warps along M-dimension
     int Mdim = csrptr.size(0) - 1;
     int Ndim = in_feat.size(1);
-    int coarsen_factor = (Ndim % 4 == 0) ? 4 : (Ndim % 2 == 0) ? 2
-                                                               : 1;
+    int coarsen_factor = (Ndim % 4 == 0) ? 4 : (Ndim % 2 == 0) ? 2 : 1;
     // partition large-N and map to blockdim.y to help cache performance
     int Ndim_threadblock = CEIL(in_feat.size(1), 32);
     int Ndim_warp_per_tb = min(Ndim, 32) / coarsen_factor;
@@ -137,79 +131,68 @@ spmm_cuda(torch::Tensor csrptr, torch::Tensor indices, torch::Tensor edge_val,
     dim3 blockDim(Ndim_warp_per_tb * 32, Mdim_warp_per_tb, 1);
 
     if (has_value)
-      if (coarsen_factor == 4)
-      {
-        SWITCH_REDUCEOP(reduce_op, REDUCE,
-                        {
-                          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
-                            csrspmm_parreduce_rowbalance_kernel<int, float, float4, REDUCE, COMPUTE><<<gridDim, blockDim>>>(
-                                Mdim, Ndim, csrptr.data_ptr<int>(),
-                                indices.data_ptr<int>(), edge_val.data_ptr<float>(),
-                                in_feat.data_ptr<float>(), out_feat.data_ptr<float>(), out_E.data_ptr<int>());
-                          });
-                        });
+      if (coarsen_factor == 4) {
+        SWITCH_REDUCEOP(reduce_op, REDUCE, {
+          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
+            csrspmm_parreduce_rowbalance_kernel<int, float, float4, REDUCE,
+                                                COMPUTE><<<gridDim, blockDim>>>(
+                Mdim, Ndim, csrptr.data_ptr<int>(), indices.data_ptr<int>(),
+                edge_val.data_ptr<float>(), in_feat.data_ptr<float>(),
+                out_feat.data_ptr<float>(), out_E.data_ptr<int>());
+          });
+        });
+      } else if (coarsen_factor == 2) {
+        SWITCH_REDUCEOP(reduce_op, REDUCE, {
+          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
+            csrspmm_parreduce_rowbalance_kernel<int, float, float2, REDUCE,
+                                                COMPUTE><<<gridDim, blockDim>>>(
+                Mdim, Ndim, csrptr.data_ptr<int>(), indices.data_ptr<int>(),
+                edge_val.data_ptr<float>(), in_feat.data_ptr<float>(),
+                out_feat.data_ptr<float>(), out_E.data_ptr<int>());
+          });
+        });
+      } else {
+        SWITCH_REDUCEOP(reduce_op, REDUCE, {
+          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
+            csrspmm_parreduce_rowbalance_kernel<int, float, float, REDUCE,
+                                                COMPUTE><<<gridDim, blockDim>>>(
+                Mdim, Ndim, csrptr.data_ptr<int>(), indices.data_ptr<int>(),
+                edge_val.data_ptr<float>(), in_feat.data_ptr<float>(),
+                out_feat.data_ptr<float>(), out_E.data_ptr<int>());
+          });
+        });
       }
-      else if (coarsen_factor == 2)
-      {
-        SWITCH_REDUCEOP(reduce_op, REDUCE,
-                        {
-                          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
-                            csrspmm_parreduce_rowbalance_kernel<int, float, float2, REDUCE, COMPUTE><<<gridDim, blockDim>>>(
-                                Mdim, Ndim, csrptr.data_ptr<int>(),
-                                indices.data_ptr<int>(), edge_val.data_ptr<float>(),
-                                in_feat.data_ptr<float>(), out_feat.data_ptr<float>(), out_E.data_ptr<int>());
-                          });
-                        });
-      }
-      else
-      {
-        SWITCH_REDUCEOP(reduce_op, REDUCE,
-                        {
-                          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
-                            csrspmm_parreduce_rowbalance_kernel<int, float, float, REDUCE, COMPUTE><<<gridDim, blockDim>>>(
-                                Mdim, Ndim, csrptr.data_ptr<int>(),
-                                indices.data_ptr<int>(), edge_val.data_ptr<float>(),
-                                in_feat.data_ptr<float>(), out_feat.data_ptr<float>(), out_E.data_ptr<int>());
-                          });
-                        });
-      }
-    else
-    {
-      if (coarsen_factor == 4)
-      {
-        SWITCH_REDUCEOP(reduce_op, REDUCE,
-                        {
-                          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
-                            csrspmm_parreduce_rowbalance_kernel<int, float, float4, REDUCE, COMPUTE><<<gridDim, blockDim>>>(
-                                Mdim, Ndim, csrptr.data_ptr<int>(),
-                                indices.data_ptr<int>(), (float *)nullptr,
-                                in_feat.data_ptr<float>(), out_feat.data_ptr<float>(), out_E.data_ptr<int>());
-                          });
-                        });
-      }
-      else if (coarsen_factor == 2)
-      {
-        SWITCH_REDUCEOP(reduce_op, REDUCE,
-                        {
-                          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
-                            csrspmm_parreduce_rowbalance_kernel<int, float, float2, REDUCE, COMPUTE><<<gridDim, blockDim>>>(
-                                Mdim, Ndim, csrptr.data_ptr<int>(),
-                                indices.data_ptr<int>(), (float *)nullptr,
-                                in_feat.data_ptr<float>(), out_feat.data_ptr<float>(), out_E.data_ptr<int>());
-                          });
-                        });
-      }
-      else
-      {
-        SWITCH_REDUCEOP(reduce_op, REDUCE,
-                        {
-                          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
-                            csrspmm_parreduce_rowbalance_kernel<int, float, float, REDUCE, COMPUTE><<<gridDim, blockDim>>>(
-                                Mdim, Ndim, csrptr.data_ptr<int>(),
-                                indices.data_ptr<int>(), (float *)nullptr,
-                                in_feat.data_ptr<float>(), out_feat.data_ptr<float>(), out_E.data_ptr<int>());
-                          });
-                        });
+    else {
+      if (coarsen_factor == 4) {
+        SWITCH_REDUCEOP(reduce_op, REDUCE, {
+          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
+            csrspmm_parreduce_rowbalance_kernel<int, float, float4, REDUCE,
+                                                COMPUTE><<<gridDim, blockDim>>>(
+                Mdim, Ndim, csrptr.data_ptr<int>(), indices.data_ptr<int>(),
+                (float *)nullptr, in_feat.data_ptr<float>(),
+                out_feat.data_ptr<float>(), out_E.data_ptr<int>());
+          });
+        });
+      } else if (coarsen_factor == 2) {
+        SWITCH_REDUCEOP(reduce_op, REDUCE, {
+          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
+            csrspmm_parreduce_rowbalance_kernel<int, float, float2, REDUCE,
+                                                COMPUTE><<<gridDim, blockDim>>>(
+                Mdim, Ndim, csrptr.data_ptr<int>(), indices.data_ptr<int>(),
+                (float *)nullptr, in_feat.data_ptr<float>(),
+                out_feat.data_ptr<float>(), out_E.data_ptr<int>());
+          });
+        });
+      } else {
+        SWITCH_REDUCEOP(reduce_op, REDUCE, {
+          SWITCH_COMPUTEOP(compute_op, COMPUTE, {
+            csrspmm_parreduce_rowbalance_kernel<int, float, float, REDUCE,
+                                                COMPUTE><<<gridDim, blockDim>>>(
+                Mdim, Ndim, csrptr.data_ptr<int>(), indices.data_ptr<int>(),
+                (float *)nullptr, in_feat.data_ptr<float>(),
+                out_feat.data_ptr<float>(), out_E.data_ptr<int>());
+          });
+        });
       }
     }
   }
@@ -259,12 +242,9 @@ spmm_cuda(torch::Tensor csrptr, torch::Tensor indices, torch::Tensor edge_val,
   // }
 
   SWITCH_REDUCEOP(reduce_op, REDUCE, {
-    if (REDUCE::Op == MAX || REDUCE::Op == MIN)
-    {
+    if (REDUCE::Op == MAX || REDUCE::Op == MIN) {
       return {out_feat, out_E};
-    }
-    else
-    {
+    } else {
       return {out_feat};
     }
   });
@@ -274,8 +254,7 @@ torch::Tensor spmm_cuda_with_mask(torch::Tensor csrptr, torch::Tensor indices,
                                   torch::Tensor edge_val, torch::Tensor in_feat,
                                   torch::Tensor E, bool has_value,
                                   int64_t algorithm, REDUCEOP reduce_op,
-                                  COMPUTEOP compute_op)
-{
+                                  COMPUTEOP compute_op) {
   in_feat = in_feat.contiguous();
   int v = csrptr.size(0) - 1;
   int Ndim_worker = in_feat.size(1);
@@ -289,8 +268,7 @@ torch::Tensor spmm_cuda_with_mask(torch::Tensor csrptr, torch::Tensor indices,
 
   printf("[SpMM_WITH_MASK] Select Algorithm %0d.\n", algorithm);
 
-  if (algorithm == 0)
-  {
+  if (algorithm == 0) {
     int Mdim_worker = csrptr.size(0) - 1;
     // int v = Mdim_worker;
     int Ndim_worker = in_feat.size(1);
@@ -325,8 +303,7 @@ torch::Tensor spmm_cuda_with_mask(torch::Tensor csrptr, torch::Tensor indices,
 };
 
 torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
-                             torch::Tensor D1, torch::Tensor D2)
-{
+                             torch::Tensor D1, torch::Tensor D2) {
   D1 = D1.contiguous();
   D2 = D2.contiguous();
   const auto k = D1.size(1);
@@ -335,20 +312,15 @@ torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
   auto options =
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
   auto out = torch::zeros({nnz}, options);
-  if ((k % 4) == 0)
-  {
+  if ((k % 4) == 0) {
     sddmmCOO4Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(8, 4, 1)>>>(
         k, nnz, rowind.data_ptr<int>(), colind.data_ptr<int>(),
         D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>());
-  }
-  else if ((k % 2) == 0)
-  {
+  } else if ((k % 2) == 0) {
     sddmmCOO2Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(16, 4, 1)>>>(
         k, nnz, rowind.data_ptr<int>(), colind.data_ptr<int>(),
         D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>());
-  }
-  else
-  {
+  } else {
     sddmmCOO1Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
         k, nnz, rowind.data_ptr<int>(), colind.data_ptr<int>(),
         D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>());
@@ -357,8 +329,7 @@ torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
 }
 
 torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
-                             torch::Tensor D1, torch::Tensor D2, bool ismean)
-{
+                             torch::Tensor D1, torch::Tensor D2, bool ismean) {
   D1 = D1.contiguous();
   D2 = D2.contiguous();
   const auto m = D1.size(0);
@@ -371,18 +342,20 @@ torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
   if ((k % 2) == 0) {
     sddmmCSR2Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(16, 4, 1)>>>(
         m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(), ismean);
+        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(),
+        ismean);
   } else {
     sddmmCSR1Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
         m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(), ismean);
+        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(),
+        ismean);
   }
   return out;
 }
 
-torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr, torch::Tensor colind,
-                                       torch::Tensor D1, torch::Tensor D2, torch::Tensor E)
-{
+torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr,
+                                       torch::Tensor colind, torch::Tensor D1,
+                                       torch::Tensor D2, torch::Tensor E) {
   D1 = D1.contiguous();
   D2 = D2.contiguous();
   E = E.contiguous();
@@ -394,16 +367,17 @@ torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr, torch::Tensor colin
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
   auto out = torch::empty({1, nnz}, options);
   printf("[SDDMM_WITH_MASK].\n");
-  sddmmCSR1Scale_with_mask<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
+  sddmmCSR1Scale_with_mask<<<dim3(nnz / 16 + (nnz & 15), 1, 1),
+                             dim3(32, 4, 1)>>>(
       m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-      D1.data_ptr<float>(), D2.data_ptr<float>(), E.data_ptr<int>(), out.data_ptr<float>());
+      D1.data_ptr<float>(), D2.data_ptr<float>(), E.data_ptr<int>(),
+      out.data_ptr<float>());
   return out;
 }
 
 std::vector<torch::Tensor> csr2csc_cuda(torch::Tensor csrRowPtr,
                                         torch::Tensor csrColInd,
-                                        torch::Tensor csrVal)
-{
+                                        torch::Tensor csrVal) {
   assert(csrRowPtr.device().type() == torch::kCUDA);
   assert(csrColInd.device().type() == torch::kCUDA);
   assert(csrVal.device().type() == torch::kCUDA);
