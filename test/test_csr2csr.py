@@ -27,7 +27,7 @@ class Csr2Csc:
         self.cols = shape[1]
 
     def check(self):
-        colptr, row, weight_transpose = torch.ops.dgsparse.csr2csc(
+        colptr, row, weight_transpose = torch.ops.dgsparse_spmm.csr2csc(
             self.rows, self.cols, self.rowptr, self.colind, self.weight
         )
         tran_s = self.sparsecsr.tocsc()
