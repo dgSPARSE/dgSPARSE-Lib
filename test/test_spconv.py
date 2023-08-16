@@ -101,7 +101,7 @@ def test_spconv():
             (k_vol, in_channel, out_channel), dtype=Dtype, device="cuda"
         )
 
-        torch.ops.dgsparse.spconv(
+        torch.ops.dgsparse_spconv.spconv(
             in_feats,
             kernel,
             kpos,

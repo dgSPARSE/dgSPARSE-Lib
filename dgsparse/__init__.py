@@ -5,12 +5,13 @@ import torch
 
 __version__ = "0.1"
 
-for library in ["_spmm"]:
+for library in ["_spconv", "_spmm"]:
     cuda_spec = importlib.machinery.PathFinder().find_spec(
         f"{library}_cuda", [osp.dirname(__file__)]
     )
     # cpu_spec = importlib.machinery.PathFinder().find_spec(
     #     f'{library}_cpu', [osp.dirname(__file__)])
+    print("spconv spec")
     spec = cuda_spec  # or cpu_spec
     if spec is not None:
         torch.ops.load_library(spec.origin)

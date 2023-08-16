@@ -1,4 +1,4 @@
-#include "./cuda/cuda_kernel.h"
+#include "../include/cuda/spconv_cuda.h"
 #include <torch/all.h>
 #include <torch/extension.h>
 #include <torch/python.h>
@@ -62,4 +62,4 @@ torch::Tensor spconv(torch::Tensor in_feats, torch::Tensor kernel,
                        sum_nnz, separate_mid, arch80);
 }
 
-TORCH_LIBRARY(dgsparse, m) { m.def("spconv", &spconv); }
+TORCH_LIBRARY(dgsparse_spconv, m) { m.def("spconv", &spconv); }

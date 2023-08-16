@@ -1,6 +1,5 @@
 #include "../../include/cuda/cuda_util.cuh"
 #include "../../include/cuda/spconv.cuh"
-#include "cuda_kernel.h"
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <cublas_v2.h>
