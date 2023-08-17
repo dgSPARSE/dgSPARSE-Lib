@@ -17,6 +17,44 @@ def kpos_quantized(knnz: torch.Tensor, kpos: torch.Tensor, k_vol: int, q: int):
     return kpos_quantized, snnz_quantized
 
 
+def cpu_compute(
+    gpu_feats: torch.Tensor,
+    gpu_weights: torch.Tensor,
+    out_size: int,
+    knnz: torch.Tensor,
+    dev_imap: torch.Tensor,
+    dev_omap: torch.Tensor,
+    precompute: bool,
+):
+    feats = gpu_feats.cpu()
+    weights = gpu_weights.cpu()
+    imap = dev_imap.cpu()
+    omap = dev_omap.cpu()
+    k_vol = weights.size(0)
+    c_in = weights.size(1)
+    c_out = weights.size(2)
+    mid_k = k_vol // 2 if (k_vol % 2 == 1) else 0
+    output = torch.zeros((out_size, c_out), dtype=feats.dtype)
+    nbaddr = 0
+    for k in range(k_vol):
+        nbsize = knnz[k]
+        if nbsize == 0:
+            continue
+        for i in range(nbsize):
+            in_index = imap[nbaddr]
+            out_index = omap[nbaddr]
+            for co in range(c_out):
+                for ci in range(c_in):
+                    output[out_index, co] += feats[in_index, ci] * weights[k, ci, co]
+            nbaddr += 1
+    if precompute:
+        for i in range(out_size):
+            for co in range(c_out):
+                for ci in range(c_in):
+                    output[i, co] += feats[i, ci] * weights[mid_k, ci, co]
+    return output
+
+
 def remove_mid(
     nnz: int,
     knnz: torch.Tensor,
@@ -101,7 +139,7 @@ def test_spconv():
             (k_vol, in_channel, out_channel), dtype=Dtype, device="cuda"
         )
 
-        torch.ops.dgsparse_spconv.spconv(
+        dev_output = torch.ops.dgsparse_spconv.spconv(
             in_feats,
             kernel,
             kpos,
@@ -113,3 +151,14 @@ def test_spconv():
             separate_mid,
             True,
         )
+
+        output = dev_output.clone().cpu()
+        out_sum = out_nnz * out_channel
+
+        # output_cpu = cpu_compute(
+        #     in_feats, kernel, out_nnz, knnz, in_map, out_map, separate_mid
+        # )
+
+        # assert output.shape == output_cpu.shape
+
+        # assert torch.allclose(output, output_cpu, rtol=1e-2, atol=1e-4) == True
