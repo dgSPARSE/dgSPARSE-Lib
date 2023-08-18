@@ -1,4 +1,3 @@
-
 import os
 import torch
 import torch.nn as nn
@@ -10,6 +9,7 @@ import dgl.sparse as dglsp
 from dgsparse.nn.gcnconv import GCN
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 class GCNLayer(nn.Module):
     def __init__(self, in_size, out_size):
@@ -24,9 +24,9 @@ class GCNLayer(nn.Module):
         I = dglsp.identity(A.shape, device=A.device)
         A_hat = A + I
         D_hat = dglsp.diag(A_hat.sum(0))
-        D_hat_invsqrt = D_hat ** -0.5
+        D_hat_invsqrt = D_hat**-0.5
         return D_hat_invsqrt @ A_hat @ D_hat_invsqrt @ self.W(X)
-    
+
 
 # Create a GCN with the GCN layer.
 class GCN_dgl(nn.Module):
@@ -39,7 +39,7 @@ class GCN_dgl(nn.Module):
         X = self.conv1(A, X)
         X = F.relu(X)
         return self.conv2(A, X)
-    
+
 
 def evaluate(g, pred):
     label = g.ndata["label"].to(device)
@@ -50,6 +50,7 @@ def evaluate(g, pred):
     val_acc = (pred[val_mask] == label[val_mask]).float().mean()
     test_acc = (pred[test_mask] == label[test_mask]).float().mean()
     return val_acc, test_acc
+
 
 def train(model, g):
     features = g.ndata["feat"].to(device)
@@ -94,7 +95,7 @@ dataset = dgl.data.CoraGraphDataset()
 g = dataset[0]
 
 # Create model.s
-feature = g.ndata['feat']
+feature = g.ndata["feat"]
 in_size = feature.shape[1]
 out_size = dataset.num_classes
 gcn_model = GCN_dgl(in_size, out_size, 16)
@@ -145,7 +146,3 @@ print(f"dgsparse time is: {end - start}")
 # print(type(D_hat), D_hat)
 # H = D_hat_invsqrt @ A_hat @ D_hat_invsqrt
 # print(type(H), H)
-
-
-
-

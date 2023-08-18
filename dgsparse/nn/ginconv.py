@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,12 +9,12 @@ from dgsparse import spmm_sum, spmm_max, spmm_mean, SparseTensor
 
 class GINConv(nn.Module):
     def __init__(
-            self,
-            apply_func=None,
-            aggregator_type="sum",
-            init_eps=0,
-            learn_eps=False,
-            activation=None
+        self,
+        apply_func=None,
+        aggregator_type="sum",
+        init_eps=0,
+        learn_eps=False,
+        activation=None,
     ):
         super().__init__()
         self.apply_func = apply_func
@@ -27,7 +26,9 @@ class GINConv(nn.Module):
             self.register_buffer("eps", torch.FloatTensor([init_eps]))
 
     def forward(self, A, X):
-        I_plus_eps = dglsp.diag(torch.zeros(A.shape[0], device=A.device)+self.eps, A.shape)
+        I_plus_eps = dglsp.diag(
+            torch.zeros(A.shape[0], device=A.device) + self.eps, A.shape
+        )
         A_hat = A + I_plus_eps
         A_hat_csr = A_hat.csr()
         A_hat_d_csr = SparseTensor(
@@ -35,7 +36,7 @@ class GINConv(nn.Module):
             rowptr=A_hat_csr[0].to(torch.int),
             col=A_hat_csr[1].to(torch.int),
             values=A_hat.val,
-            has_value=True
+            has_value=True,
         )
         if self._aggregator_type == "sum":
             spmm_func = spmm_sum
@@ -55,23 +56,29 @@ class GINConv(nn.Module):
 
 class GIN(nn.Module):
     def __init__(
-            self,
-            in_size,
-            hidden_size,
-            out_size,
-            aggregator_type="sum",
-            init_eps=0,
-            learn_eps=False,
-            activation=None
+        self,
+        in_size,
+        hidden_size,
+        out_size,
+        aggregator_type="sum",
+        init_eps=0,
+        learn_eps=False,
+        activation=None,
     ):
         super().__init__()
         self.conv1 = GINConv(
             nn.Linear(in_size, hidden_size, bias=False),
-            aggregator_type, init_eps, learn_eps, activation
+            aggregator_type,
+            init_eps,
+            learn_eps,
+            activation,
         )
         self.conv2 = GINConv(
             nn.Linear(hidden_size, out_size, bias=False),
-            aggregator_type, init_eps, learn_eps, activation
+            aggregator_type,
+            init_eps,
+            learn_eps,
+            activation,
         )
 
     def forward(self, A, X):
@@ -89,7 +96,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dataset = dgl.data.CoraGraphDataset()
     g = dataset[0]
-    feature = g.ndata['feat']
+    feature = g.ndata["feat"]
     in_size = feature.shape[1]
     out_size = dataset.num_classes
     gin_model = GIN(in_size, 32, out_size, activation=F.rrelu)
@@ -143,8 +150,3 @@ if __name__ == "__main__":
         return val_acc, test_acc
 
     train(gin_model, g)
-
-
-
-
-
