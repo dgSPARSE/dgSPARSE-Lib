@@ -266,8 +266,6 @@ torch::Tensor spmm_cuda_with_mask(torch::Tensor csrptr, torch::Tensor indices,
 
   auto out_feat = torch::empty({v, f}, options);
 
-  printf("[SpMM_WITH_MASK] Select Algorithm %0d.\n", algorithm);
-
   if (algorithm == 0) {
     int Mdim_worker = csrptr.size(0) - 1;
     // int v = Mdim_worker;
@@ -329,7 +327,8 @@ torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
 }
 
 torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
-                             torch::Tensor D1, torch::Tensor D2, bool ismean) {
+                             torch::Tensor D1, torch::Tensor D2,
+                             REDUCEOP reduce_op) {
   D1 = D1.contiguous();
   D2 = D2.contiguous();
   const auto m = D1.size(0);
@@ -340,15 +339,21 @@ torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
   auto out = torch::empty({1, nnz}, options);
   if ((k % 2) == 0) {
-    sddmmCSR2Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(16, 4, 1)>>>(
-        m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(),
-        ismean);
+    SWITCH_REDUCEOP(reduce_op, REDUCE, {
+      sddmmCSR2Scale<REDUCE>
+          <<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(16, 4, 1)>>>(
+              m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
+              D1.data_ptr<float>(), D2.data_ptr<float>(),
+              out.data_ptr<float>());
+    });
   } else {
-    sddmmCSR1Scale<<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
-        m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
-        D1.data_ptr<float>(), D2.data_ptr<float>(), out.data_ptr<float>(),
-        ismean);
+    SWITCH_REDUCEOP(reduce_op, REDUCE, {
+      sddmmCSR1Scale<REDUCE>
+          <<<dim3(nnz / 16 + (nnz & 15), 1, 1), dim3(32, 4, 1)>>>(
+              m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
+              D1.data_ptr<float>(), D2.data_ptr<float>(),
+              out.data_ptr<float>());
+    });
   }
   return out;
 }
