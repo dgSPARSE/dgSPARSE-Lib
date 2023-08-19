@@ -54,7 +54,7 @@ public:
     auto grad_value = torch::Tensor();
     if (has_value > 0 &&
         torch::autograd::any_variable_requires_grad({values})) {
-      grad_value = sddmm_cuda_csr(rowptr, col, grad_out, dense, false);
+      grad_value = sddmm_cuda_csr(rowptr, col, grad_out, dense, REDUCEOP::SUM);
     }
 
     auto grad_mat = std::vector<torch::Tensor>();
@@ -232,7 +232,7 @@ public:
     auto grad_value = torch::Tensor();
     if (has_value > 0 &&
         torch::autograd::any_variable_requires_grad({values})) {
-      grad_value = sddmm_cuda_csr(rowptr, col, grad_out, dense, true);
+      grad_value = sddmm_cuda_csr(rowptr, col, grad_out, dense, REDUCEOP::MEAN);
     }
 
     auto grad_mat = std::vector<torch::Tensor>();
@@ -260,16 +260,10 @@ torch::Tensor spmm_mean(torch::Tensor rowptr, torch::Tensor col,
   return SpMMMean::apply(rowptr, col, values, dense, has_value, algorithm);
 }
 
-torch::Tensor sddmm_csr(torch::Tensor rowptr, torch::Tensor colind,
-                        torch::Tensor D1, torch::Tensor D2, bool ismean) {
-  return sddmm_cuda_csr(rowptr, colind, D1, D2, ismean);
-}
-
 TORCH_LIBRARY(dgsparse_spmm, m) {
   m.def("spmm_sum", &spmm_sum);
   m.def("spmm_max", &spmm_max);
   m.def("spmm_min", &spmm_min);
   m.def("spmm_mean", &spmm_mean);
   m.def("csr2csc", &csr2csc);
-  m.def("sddmm_csr", &sddmm_csr);
 }

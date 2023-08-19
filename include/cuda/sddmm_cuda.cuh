@@ -1,6 +1,7 @@
 #ifndef SDDMM_CUDA
 #define SDDMM_CUDA
 
+#include "../gspmm.h"
 #include "cuda_util.cuh"
 #include "device_atomic_functions.h"
 #include "device_launch_parameters.h"
@@ -11,13 +12,11 @@
 __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
                                int *S_cooRowInd, int *S_cooColInd,
                                float *D1_dnVal, float *D2_dnVal,
-                               float *O_cooVal)
-{
+                               float *O_cooVal) {
   int eid = (blockIdx.x << 4) + (threadIdx.y << 2);
   int cid = (threadIdx.x << 2);
 
-  if (blockIdx.x < Size / 16)
-  {
+  if (blockIdx.x < Size / 16) {
     float multi[4] = {0, 0, 0, 0};
     int offset1[4], offset2[4];
     float4 D1tmp[4], D2tmp[4];
@@ -26,22 +25,18 @@ __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
-    for (int i = 0; i < (D_kcols >> 5); i++)
-    {
+    for (int i = 0; i < (D_kcols >> 5); i++) {
       Load4<float4, float>(D1tmp, D1_dnVal, offset1, cid);
       Load4<float4, float>(D2tmp, D2_dnVal, offset2, cid);
       vec4Dot4<float4, float>(multi, D1tmp, D2tmp);
       cid += 32;
     }
     int res = D_kcols & 31;
-    if (res)
-    {
+    if (res) {
       int cid2 = threadIdx.x + D_kcols - res;
       float D1[4] = {0, 0, 0, 0}, D2[4] = {0, 0, 0, 0};
-      for (int i = 0; i < res / 8 + 1; i++)
-      {
-        if (i * 8 + threadIdx.x < res)
-        {
+      for (int i = 0; i < res / 8 + 1; i++) {
+        if (i * 8 + threadIdx.x < res) {
           Load4<float, float>(D1, D1_dnVal, offset1, cid2);
           Load4<float, float>(D2, D2_dnVal, offset2, cid2);
           Dot4<float>(multi, D1, D2);
@@ -50,12 +45,10 @@ __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
       }
     }
     AllReduce4<float>(multi, 4, 32);
-    if (threadIdx.x == 0)
-    {
+    if (threadIdx.x == 0) {
       Store<float4, float>(O_cooVal, multi, eid);
     }
-  }
-  else // Dynamic parrallel?
+  } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
     int offset1 = S_cooRowInd[eid] * D_kcols;
@@ -63,8 +56,7 @@ __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
     float multi = 0;
     int off1 = cid = threadIdx.x + (threadIdx.y << 3);
     float D1tmp0, D2tmp0;
-    for (int cc = 0; cc < (D_kcols >> 5); cc++)
-    {
+    for (int cc = 0; cc < (D_kcols >> 5); cc++) {
       D1tmp0 = D1_dnVal[offset1 + cid];
       D2tmp0 = D2_dnVal[offset2 + cid];
       multi += D1tmp0 * D2tmp0;
@@ -72,21 +64,17 @@ __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
     }
     int res = D_kcols & 31;
     D1tmp0 = D2tmp0 = 0;
-    if (res)
-    {
-      if (off1 < res)
-      {
+    if (res) {
+      if (off1 < res) {
         D1tmp0 = D1_dnVal[offset1 + cid];
         D2tmp0 = D2_dnVal[offset2 + cid];
       }
       multi += D1tmp0 * D2tmp0;
     }
-    for (int stride = 16; stride > 0; stride >>= 1)
-    {
+    for (int stride = 16; stride > 0; stride >>= 1) {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
     }
-    if (threadIdx.x == 0 && threadIdx.y == 0)
-    {
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
     }
   }
@@ -95,13 +83,11 @@ __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
 __global__ void sddmmCOO2Scale(int D_kcols, const unsigned long Size,
                                int *S_cooRowInd, int *S_cooColInd,
                                float *D1_dnVal, float *D2_dnVal,
-                               float *O_cooVal)
-{
+                               float *O_cooVal) {
   int eid = (blockIdx.x << 4) + (threadIdx.y << 2);
   int cid = threadIdx.x << 1;
 
-  if (blockIdx.x < Size / 16)
-  {
+  if (blockIdx.x < Size / 16) {
     float multi[4] = {0, 0, 0, 0};
     int offset1[4], offset2[4];
     float2 D1tmp[4], D2tmp[4];
@@ -110,22 +96,18 @@ __global__ void sddmmCOO2Scale(int D_kcols, const unsigned long Size,
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
-    for (int i = 0; i < (D_kcols >> 5); i++)
-    {
+    for (int i = 0; i < (D_kcols >> 5); i++) {
       Load4<float2, float>(D1tmp, D1_dnVal, offset1, cid);
       Load4<float2, float>(D2tmp, D2_dnVal, offset2, cid);
       vec2Dot4<float2>(multi, D1tmp, D2tmp);
       cid += 32;
     }
     int res = D_kcols & 31;
-    if (res)
-    {
+    if (res) {
       int cid2 = threadIdx.x + D_kcols - res;
       float D1[4] = {0, 0, 0, 0}, D2[4] = {0, 0, 0, 0};
-      for (int i = 0; i < (res >> 4) + 1; i++)
-      {
-        if ((i << 4) + threadIdx.x < res)
-        {
+      for (int i = 0; i < (res >> 4) + 1; i++) {
+        if ((i << 4) + threadIdx.x < res) {
           Load4<float, float>(D1, D1_dnVal, offset1, cid2);
           Load4<float, float>(D2, D2_dnVal, offset2, cid2);
           Dot4<float>(multi, D1, D2);
@@ -134,12 +116,10 @@ __global__ void sddmmCOO2Scale(int D_kcols, const unsigned long Size,
       }
     }
     AllReduce4<float>(multi, 8, 32);
-    if (threadIdx.x == 0)
-    {
+    if (threadIdx.x == 0) {
       Store<float4, float>(O_cooVal, multi, eid);
     }
-  }
-  else // Dynamic parrallel?
+  } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
     int offset1 = S_cooRowInd[eid] * D_kcols;
@@ -147,8 +127,7 @@ __global__ void sddmmCOO2Scale(int D_kcols, const unsigned long Size,
     float multi = 0;
     int off1 = cid = (threadIdx.y << 4) + threadIdx.x;
     float D1tmp0, D2tmp0;
-    for (int cc = 0; cc < (D_kcols >> 5); cc++)
-    {
+    for (int cc = 0; cc < (D_kcols >> 5); cc++) {
       D1tmp0 = D1_dnVal[offset1 + cid];
       D2tmp0 = D2_dnVal[offset2 + cid];
       multi += D1tmp0 * D2tmp0;
@@ -156,21 +135,17 @@ __global__ void sddmmCOO2Scale(int D_kcols, const unsigned long Size,
     }
     int res = D_kcols & 31;
     D1tmp0 = D2tmp0 = 0;
-    if (res)
-    {
-      if (off1 < res)
-      {
+    if (res) {
+      if (off1 < res) {
         D1tmp0 = D1_dnVal[offset1 + cid];
         D2tmp0 = D2_dnVal[offset2 + cid];
       }
       multi += D1tmp0 * D2tmp0;
     }
-    for (int stride = 16; stride > 0; stride >>= 1)
-    {
+    for (int stride = 16; stride > 0; stride >>= 1) {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
     }
-    if (threadIdx.x == 0 && threadIdx.y == 0)
-    {
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
     }
   }
@@ -179,13 +154,11 @@ __global__ void sddmmCOO2Scale(int D_kcols, const unsigned long Size,
 __global__ void sddmmCOO1Scale(int D_kcols, const unsigned long Size,
                                int *S_cooRowInd, int *S_cooColInd,
                                float *D1_dnVal, float *D2_dnVal,
-                               float *O_cooVal)
-{
+                               float *O_cooVal) {
   int eid = (blockIdx.x << 4) + (threadIdx.y << 2);
   int cid = threadIdx.x;
 
-  if (blockIdx.x < Size / 16)
-  {
+  if (blockIdx.x < Size / 16) {
     float multi[4] = {0, 0, 0, 0};
     int offset1[4], offset2[4];
     float D1tmp[4], D2tmp[4];
@@ -194,31 +167,26 @@ __global__ void sddmmCOO1Scale(int D_kcols, const unsigned long Size,
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
-    for (int i = 0; i < (D_kcols >> 5); i++)
-    {
+    for (int i = 0; i < (D_kcols >> 5); i++) {
       Load4<float, float>(D1tmp, D1_dnVal, offset1, cid);
       Load4<float, float>(D2tmp, D2_dnVal, offset2, cid);
       Dot4<float>(multi, D1tmp, D2tmp);
       cid += 32;
     }
     int res = D_kcols & 31;
-    if (res)
-    {
+    if (res) {
       float D1[4] = {0, 0, 0, 0}, D2[4] = {0, 0, 0, 0};
-      if (threadIdx.x < res)
-      {
+      if (threadIdx.x < res) {
         Load4<float, float>(D1, D1_dnVal, offset1, cid);
         Load4<float, float>(D2, D2_dnVal, offset2, cid);
         Dot4<float>(multi, D1, D2);
       }
     }
     AllReduce4<float>(multi, 16, 32);
-    if (threadIdx.x == 0)
-    {
+    if (threadIdx.x == 0) {
       Store<float4, float>(O_cooVal, multi, eid);
     }
-  }
-  else // Dynamic parrallel?
+  } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
     int offset1 = S_cooRowInd[eid] * D_kcols;
@@ -226,8 +194,7 @@ __global__ void sddmmCOO1Scale(int D_kcols, const unsigned long Size,
     float multi = 0;
     int off1 = cid = threadIdx.x;
     float D1tmp0, D2tmp0;
-    for (int cc = 0; cc < (D_kcols >> 5); cc++)
-    {
+    for (int cc = 0; cc < (D_kcols >> 5); cc++) {
       D1tmp0 = D1_dnVal[offset1 + cid];
       D2tmp0 = D2_dnVal[offset2 + cid];
       multi += D1tmp0 * D2tmp0;
@@ -235,36 +202,31 @@ __global__ void sddmmCOO1Scale(int D_kcols, const unsigned long Size,
     }
     int res = D_kcols & 31;
     D1tmp0 = D2tmp0 = 0;
-    if (res)
-    {
-      if (off1 < res)
-      {
+    if (res) {
+      if (off1 < res) {
         D1tmp0 = D1_dnVal[offset1 + cid];
         D2tmp0 = D2_dnVal[offset2 + cid];
       }
       multi += D1tmp0 * D2tmp0;
     }
-    for (int stride = 16; stride > 0; stride >>= 1)
-    {
+    for (int stride = 16; stride > 0; stride >>= 1) {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
     }
-    if (threadIdx.x == 0 && threadIdx.y == 0)
-    {
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
     }
   }
 }
 
+template <typename REDUCE>
 __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
                                const unsigned long Size, int *S_csrRowPtr,
                                int *S_csrColInd, float *D1_dnVal,
-                               float *D2_dnVal, float *O_csrVal, bool ismean)
-{
+                               float *D2_dnVal, float *O_csrVal) {
   int eid = (blockIdx.x << 4) + (threadIdx.y << 2);
   int cid = threadIdx.x << 1;
 
-  if (blockIdx.x < Size / 16)
-  {
+  if (blockIdx.x < Size / 16) {
     float multi[4] = {0, 0, 0, 0};
     int offset1[4], offset2[4];
     int length[4] = {1, 1, 1, 1};
@@ -274,29 +236,24 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
     offset1[3] = findRow(S_csrRowPtr, eid + 3, offset1[0], S_mrows);
     offset1[1] = findRow(S_csrRowPtr, eid + 1, offset1[0], offset1[3]);
     offset1[2] = findRow(S_csrRowPtr, eid + 2, offset1[1], offset1[3]);
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
       length[i] = S_csrRowPtr[offset1[i] + 1] - S_csrRowPtr[offset1[i]];
     }
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
-    for (int i = 0; i < (D_kcols >> 5); i++)
-    {
+    for (int i = 0; i < (D_kcols >> 5); i++) {
       Load4<float2, float>(D1tmp, D1_dnVal, offset1, cid);
       Load4<float2, float>(D2tmp, D2_dnVal, offset2, cid);
       vec2Dot4<float2>(multi, D1tmp, D2tmp);
       cid += 32;
     }
     int res = D_kcols & 31;
-    if (res)
-    {
+    if (res) {
       int cid2 = threadIdx.x + D_kcols - res;
       float D1[4] = {0, 0, 0, 0}, D2[4] = {0, 0, 0, 0};
-      for (int i = 0; i < (res >> 4) + 1; i++)
-      {
-        if ((i << 4) + threadIdx.x < res)
-        {
+      for (int i = 0; i < (res >> 4) + 1; i++) {
+        if ((i << 4) + threadIdx.x < res) {
           Load4<float, float>(D1, D1_dnVal, offset1, cid2);
           Load4<float, float>(D2, D2_dnVal, offset2, cid2);
           Dot4<float>(multi, D1, D2);
@@ -305,32 +262,27 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
       }
     }
     AllReduce4<float>(multi, 8, 32);
-    if (ismean)
-    {
-      for (int i = 0; i < 4; ++i)
-      {
-        if (length[i] > 0)
-        {
+    if (REDUCE::Op == MEAN) {
+      for (int i = 0; i < 4; ++i) {
+        if (length[i] > 0) {
           multi[i] /= length[i];
         }
       }
     }
-    if (threadIdx.x == 0)
-    {
+    if (threadIdx.x == 0) {
       Store<float4, float>(O_csrVal, multi, eid);
     }
-  }
-  else // Dynamic parrallel?
+  } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
     int offset1 = findRow(S_csrRowPtr, eid, 0, S_mrows) * D_kcols;
-    int length = S_csrRowPtr[offset1 / D_kcols + 1] - S_csrRowPtr[offset1 / D_kcols];
+    int length =
+        S_csrRowPtr[offset1 / D_kcols + 1] - S_csrRowPtr[offset1 / D_kcols];
     int offset2 = S_csrColInd[eid] * D_kcols;
     float multi = 0;
     int off1 = cid = (threadIdx.y << 4) + threadIdx.x;
     float D1tmp0, D2tmp0;
-    for (int cc = 0; cc < (D_kcols >> 5); cc++)
-    {
+    for (int cc = 0; cc < (D_kcols >> 5); cc++) {
       D1tmp0 = D1_dnVal[offset1 + cid];
       D2tmp0 = D2_dnVal[offset2 + cid];
       multi += D1tmp0 * D2tmp0;
@@ -338,40 +290,34 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
     }
     int res = D_kcols & 31;
     D1tmp0 = D2tmp0 = 0;
-    if (res)
-    {
-      if (off1 < res)
-      {
+    if (res) {
+      if (off1 < res) {
         D1tmp0 = D1_dnVal[offset1 + cid];
         D2tmp0 = D2_dnVal[offset2 + cid];
       }
       multi += D1tmp0 * D2tmp0;
     }
-    for (int stride = 16; stride > 0; stride >>= 1)
-    {
+    for (int stride = 16; stride > 0; stride >>= 1) {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
     }
-    if (ismean && length > 0)
-    {
+    if (REDUCE::Op == MEAN && length > 0) {
       multi /= length;
     }
-    if (threadIdx.x == 0 && threadIdx.y == 0)
-    {
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_csrVal[eid] = multi;
     }
   }
 }
 
+template <typename REDUCE>
 __global__ void sddmmCSR1Scale(const int S_mrows, int D_kcols,
                                const unsigned long Size, int *S_csrRowPtr,
                                int *S_csrColInd, float *D1_dnVal,
-                               float *D2_dnVal, float *O_csrVal, bool ismean)
-{
+                               float *D2_dnVal, float *O_csrVal) {
   int eid = (blockIdx.x << 4) + (threadIdx.y << 2);
   int cid = threadIdx.x;
 
-  if (blockIdx.x < Size / 16)
-  {
+  if (blockIdx.x < Size / 16) {
     float multi[4] = {0, 0, 0, 0};
     int offset1[4], offset2[4];
     float D1tmp[4], D2tmp[4];
@@ -384,58 +330,49 @@ __global__ void sddmmCSR1Scale(const int S_mrows, int D_kcols,
     offset1[1] = findRow(S_csrRowPtr, eid + 1, offset1[0], offset1[3]);
     offset1[2] = findRow(S_csrRowPtr, eid + 2, offset1[1], offset1[3]);
 
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
       length[i] = S_csrRowPtr[offset1[i] + 1] - S_csrRowPtr[offset1[i]];
     }
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
-    for (int i = 0; i < (D_kcols >> 5); i++)
-    {
+    for (int i = 0; i < (D_kcols >> 5); i++) {
       Load4<float, float>(D1tmp, D1_dnVal, offset1, cid);
       Load4<float, float>(D2tmp, D2_dnVal, offset2, cid);
       Dot4<float>(multi, D1tmp, D2tmp);
       cid += 32;
     }
     int res = D_kcols & 31;
-    if (res)
-    {
+    if (res) {
       float D1[4] = {0, 0, 0, 0}, D2[4] = {0, 0, 0, 0};
-      if (threadIdx.x < res)
-      {
+      if (threadIdx.x < res) {
         Load4<float, float>(D1, D1_dnVal, offset1, cid);
         Load4<float, float>(D2, D2_dnVal, offset2, cid);
         Dot4<float>(multi, D1, D2);
       }
     }
     AllReduce4<float>(multi, 16, 32);
-    if (ismean)
-    {
-      for (int i = 0; i < 4; ++i)
-      {
-        if (length[i] > 0)
-        {
+    if (REDUCE::Op == MEAN) {
+      for (int i = 0; i < 4; ++i) {
+        if (length[i] > 0) {
           multi[i] /= length[i];
         }
       }
     }
-    if (threadIdx.x == 0)
-    {
+    if (threadIdx.x == 0) {
       Store<float4, float>(O_csrVal, multi, eid);
     }
-  }
-  else // Dynamic parrallel?
+  } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
     int offset1 = findRow(S_csrRowPtr, eid, 0, S_mrows) * D_kcols;
-    int length = S_csrRowPtr[offset1 / D_kcols + 1] - S_csrRowPtr[offset1 / D_kcols];
+    int length =
+        S_csrRowPtr[offset1 / D_kcols + 1] - S_csrRowPtr[offset1 / D_kcols];
     int offset2 = S_csrColInd[eid] * D_kcols;
     float multi = 0;
     int off1 = cid = threadIdx.x;
     float D1tmp0, D2tmp0;
-    for (int cc = 0; cc < (D_kcols >> 5); cc++)
-    {
+    for (int cc = 0; cc < (D_kcols >> 5); cc++) {
       D1tmp0 = D1_dnVal[offset1 + cid];
       D2tmp0 = D2_dnVal[offset2 + cid];
       multi += D1tmp0 * D2tmp0;
@@ -443,40 +380,34 @@ __global__ void sddmmCSR1Scale(const int S_mrows, int D_kcols,
     }
     int res = D_kcols & 31;
     D1tmp0 = D2tmp0 = 0;
-    if (res)
-    {
-      if (off1 < res)
-      {
+    if (res) {
+      if (off1 < res) {
         D1tmp0 = D1_dnVal[offset1 + cid];
         D2tmp0 = D2_dnVal[offset2 + cid];
       }
       multi += D1tmp0 * D2tmp0;
     }
-    for (int stride = 16; stride > 0; stride >>= 1)
-    {
+    for (int stride = 16; stride > 0; stride >>= 1) {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
     }
-    if (ismean && length > 0)
-    {
+    if (REDUCE::Op == MEAN && length > 0) {
       multi /= length;
     }
-    if (threadIdx.x == 0 && threadIdx.y == 0)
-    {
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_csrVal[eid] = multi;
     }
   }
 }
 
 __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
-                                         const unsigned long Size, int *S_csrRowPtr,
-                                         int *S_csrColInd, float *D1_dnVal,
-                                         float *D2_dnVal, int *E, float *O_csrVal)
-{
+                                         const unsigned long Size,
+                                         int *S_csrRowPtr, int *S_csrColInd,
+                                         float *D1_dnVal, float *D2_dnVal,
+                                         int *E, float *O_csrVal) {
   int eid = (blockIdx.x << 4) + (threadIdx.y << 2);
   int cid = threadIdx.x;
 
-  if (blockIdx.x < Size / 16)
-  {
+  if (blockIdx.x < Size / 16) {
     float multi[4] = {0, 0, 0, 0};
     int offset1[4], offset2[4];
     int offset2_tmp[4];
@@ -484,8 +415,7 @@ __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
     int E_k_idx[4];
 
     Load<int4, int>(offset2, S_csrColInd, eid);
-    for (int ii = 0; ii < 4; ii++)
-    {
+    for (int ii = 0; ii < 4; ii++) {
       offset2_tmp[ii] = offset2[ii];
     }
 
@@ -497,16 +427,14 @@ __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
     selfMulConst4<int>(offset1, D_kcols);
     selfMulConst4<int>(offset2, D_kcols);
 
-    for (int i = 0; i < (D_kcols >> 5); i++)
-    {
+    for (int i = 0; i < (D_kcols >> 5); i++) {
       Load4<float, float>(D1tmp, D1_dnVal, offset1, cid);
       Load4<float, float>(D2tmp, D2_dnVal, offset2, cid);
       Load4<int, int>(E_k_idx, E, offset1, cid);
-      for (int ii = 0; ii < 4; ii++)
-      {
-        if (E_k_idx[ii] == offset2_tmp[ii])
-        {
-          // printf("DEBUG400:E[%0d][%0d]=%0d\n", offset1[ii]/D_kcols, cid, E_k_idx[ii]);
+      for (int ii = 0; ii < 4; ii++) {
+        if (E_k_idx[ii] == offset2_tmp[ii]) {
+          // printf("DEBUG400:E[%0d][%0d]=%0d\n", offset1[ii]/D_kcols, cid,
+          // E_k_idx[ii]);
           multi[ii] += D1tmp[ii] * D2tmp[ii];
         }
       }
@@ -514,19 +442,16 @@ __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
       cid += 32;
     }
     int res = D_kcols & 31;
-    if (res)
-    {
+    if (res) {
       float D1[4] = {0, 0, 0, 0}, D2[4] = {0, 0, 0, 0};
-      if (threadIdx.x < res)
-      {
+      if (threadIdx.x < res) {
         Load4<float, float>(D1, D1_dnVal, offset1, cid);
         Load4<float, float>(D2, D2_dnVal, offset2, cid);
         Load4<int, int>(E_k_idx, E, offset1, cid);
-        for (int ii = 0; ii < 4; ii++)
-        {
-          if (E_k_idx[ii] == offset2_tmp[ii])
-          {
-            // printf("DEBUG416:E[%0d][%0d]=%0d\n", offset1[ii]/D_kcols, cid, E_k_idx[ii]);
+        for (int ii = 0; ii < 4; ii++) {
+          if (E_k_idx[ii] == offset2_tmp[ii]) {
+            // printf("DEBUG416:E[%0d][%0d]=%0d\n", offset1[ii]/D_kcols, cid,
+            // E_k_idx[ii]);
             multi[ii] += D1[ii] * D2[ii];
           }
         }
@@ -534,12 +459,10 @@ __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
       }
     }
     AllReduce4<float>(multi, 16, 32);
-    if (threadIdx.x == 0)
-    {
+    if (threadIdx.x == 0) {
       Store<float4, float>(O_csrVal, multi, eid);
     }
-  }
-  else // Dynamic parrallel?
+  } else // Dynamic parrallel?
   {
     eid = Size - (Size & 15) + (blockIdx.x - (Size / 16));
     int offset1 = findRow(S_csrRowPtr, eid, 0, S_mrows) * D_kcols;
@@ -548,13 +471,11 @@ __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
     int off1 = cid = threadIdx.x;
     float D1tmp0, D2tmp0;
     int E_k_idx;
-    for (int cc = 0; cc < (D_kcols >> 5); cc++)
-    {
+    for (int cc = 0; cc < (D_kcols >> 5); cc++) {
       D1tmp0 = D1_dnVal[offset1 + cid];
       D2tmp0 = D2_dnVal[offset2 + cid];
       E_k_idx = E[offset1 + cid];
-      if (E_k_idx == S_csrColInd[eid])
-      {
+      if (E_k_idx == S_csrColInd[eid]) {
         // printf("DEBUG441:E[%0d][%0d]=%0d\n", offset1/D_kcols, cid, E_k_idx);
         multi += D1tmp0 * D2tmp0;
       }
@@ -563,27 +484,22 @@ __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
     }
     int res = D_kcols & 31;
     D1tmp0 = D2tmp0 = 0;
-    if (res)
-    {
-      if (off1 < res)
-      {
+    if (res) {
+      if (off1 < res) {
         D1tmp0 = D1_dnVal[offset1 + cid];
         D2tmp0 = D2_dnVal[offset2 + cid];
         E_k_idx = E[offset1 + cid];
       }
-      if (E_k_idx == S_csrColInd[eid])
-      {
+      if (E_k_idx == S_csrColInd[eid]) {
         // printf("DEBUG456:E[%0d][%0d]=%0d\n", offset1/D_kcols, cid, E_k_idx);
         multi += D1tmp0 * D2tmp0;
       }
       // multi += D1tmp0 * D2tmp0;
     }
-    for (int stride = 16; stride > 0; stride >>= 1)
-    {
+    for (int stride = 16; stride > 0; stride >>= 1) {
       multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
     }
-    if (threadIdx.x == 0 && threadIdx.y == 0)
-    {
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_csrVal[eid] = multi;
     }
   }

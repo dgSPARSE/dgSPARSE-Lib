@@ -18,7 +18,8 @@ torch::Tensor sddmm_cuda_coo(torch::Tensor rowind, torch::Tensor colind,
                              torch::Tensor D1, torch::Tensor D2);
 
 torch::Tensor sddmm_cuda_csr(torch::Tensor rowptr, torch::Tensor colind,
-                             torch::Tensor D1, torch::Tensor D2, bool ismean);
+                             torch::Tensor D1, torch::Tensor D2,
+                             REDUCEOP reduce_op);
 
 torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr,
                                        torch::Tensor colind, torch::Tensor D1,
