@@ -10,7 +10,7 @@ inline __device__ int buffer_encoder(const int k_id, const int k_map_id){
 
 inline __device__ uint64_t coord_hash(const int b, const int ix, const int iy, const int iz){
     // +1 to avoid val==0
-    return ((uint64_t)b * 23783141 + (uint64_t)ix * 73856093 
+    return ((uint64_t)b * 23783141 + (uint64_t)ix * 73856093
         + (uint64_t)iy * 19349669 + (uint64_t)iz * 83492791 + 1);
 }
 
@@ -28,15 +28,15 @@ inline __device__ int kernel_map_decoder(int code){
 }
 
 __global__ void insertHash(
-                const int nnz, 
-                const int size, 
-                const int *__restrict__ coord, 
+                const int nnz,
+                const int size,
+                const int *__restrict__ coord,
                 int *idx){
-    
+
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     // exclude illegal id number
     if (id >= nnz){return;}
-    uint64_t temp_val = coord_hash(coord[4 * id], coord[4 * id + 1], 
+    uint64_t temp_val = coord_hash(coord[4 * id], coord[4 * id + 1],
         coord[4 * id + 2], coord[4 * id + 3]);
     // temp_val is unique
     uint64_t table_id = temp_val % (uint64_t)size;
@@ -46,21 +46,21 @@ __global__ void insertHash(
     while(old_idx > -1){
         table_id = (table_id + 97) % size;
         old_idx = atomicExch(&idx[table_id], old_idx);
-    }  
+    }
 }
 
 __global__ void insertVal(
-                const int nnz, 
-                const int size, 
-                const int *__restrict__ coord, 
-                const int *idx, 
+                const int nnz,
+                const int size,
+                const int *__restrict__ coord,
+                const int *idx,
                 uint64_t *val){
-    
+
     int id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id >= size){return;}
     int input_id = idx[id];
     if (input_id < nnz && input_id > -1){
-        val[id] = coord_hash(coord[4 * input_id], coord[4 * input_id + 1], 
+        val[id] = coord_hash(coord[4 * input_id], coord[4 * input_id + 1],
             coord[4 * input_id + 2], coord[4 * input_id + 3]);
     }
 }
@@ -71,32 +71,32 @@ The query function to build mapping for D1.
 template<int _NNZS_PER_BLOCK, int _KOFS_THREADS>
 __global__ void _queryhash_subm(
     // input nnz
-    const int innz, 
+    const int innz,
     // output nnz
-    const int onnz, 
+    const int onnz,
     // input coords hash table size
-    const int size, 
+    const int size,
     // output coords, (onnz, 3)
     const int *__restrict__ coord,
     // coded kernel size, f = 311x + 17y + z
     const int ksx,
-    const int ksy, 
-    const int ksz,  
+    const int ksy,
+    const int ksz,
     // kernel volume
-    const int kv, 
+    const int kv,
     // hash table (value), (size, )
-    const uint64_t *val, 
+    const uint64_t *val,
     // hash table (index), (size, )
-    const int *idx, 
+    const int *idx,
     // input-major mapping, (innz * (kv - 1))
     int *map,
-    // the counter of nnz for each each kernel offsets, (kv - 1)               
+    // the counter of nnz for each each kernel offsets, (kv - 1)
     int *knnz,
     // whether to compute center kernel offset separately
-    bool separate_mid)             
+    bool separate_mid)
 {
     // a thread for a coord
-    int output_id = blockIdx.x * _NNZS_PER_BLOCK + threadIdx.y;  
+    int output_id = blockIdx.x * _NNZS_PER_BLOCK + threadIdx.y;
     // exclude illegal id number
     if (output_id >= onnz){return;}
     // shared mem to store the output coord
@@ -107,7 +107,7 @@ __global__ void _queryhash_subm(
     shm[threadIdx.y * 4 + 2] = coord[output_id * 4 + 2];
     shm[threadIdx.y * 4 + 3] = coord[output_id * 4 + 3];
     // decode kernel size
-    int mid_ks = (ksx - 1) / 2 * ksy * ksz + 
+    int mid_ks = (ksx - 1) / 2 * ksy * ksz +
         (ksy - 1) / 2 * ksz + (ksz - 1) / 2;
 #pragma unroll
     for (int k = 0; ; k += _KOFS_THREADS){
@@ -120,8 +120,8 @@ __global__ void _queryhash_subm(
         int ky = (kp / ksz) % ksy - (ksy - 1) / 2;
         int kz = kp % ksz - (ksz - 1) / 2;
         // hash query
-        uint64_t target_val = coord_hash(shm[threadIdx.y * 4], 
-            shm[threadIdx.y * 4 + 1] + kx, shm[threadIdx.y * 4 + 2] + ky, 
+        uint64_t target_val = coord_hash(shm[threadIdx.y * 4],
+            shm[threadIdx.y * 4 + 1] + kx, shm[threadIdx.y * 4 + 2] + ky,
             shm[threadIdx.y * 4 + 3] + kz);
         uint64_t target_id = target_val % (uint64_t)size;
         // find target or empty
@@ -145,38 +145,38 @@ The query function to build mapping for D2.
 template<int _NNZS_PER_BLOCK, int _KOFS_THREADS>
 __global__ void _queryhash_sp(
     // input nnz
-    const int innz, 
+    const int innz,
     // output nnz
-    const int onnz, 
+    const int onnz,
     // input coords hash table size
-    const int size, 
+    const int size,
     // output coords, (onnz, 3)
     const int *__restrict__ coord,
     // coded kernel size, f = 311x + 17y + z
     const int ksx,
-    const int ksy, 
-    const int ksz,  
+    const int ksy,
+    const int ksz,
     // kernel volume
-    const int kv, 
+    const int kv,
     // stride
-    const int stride_x, 
-    const int stride_y, 
-    const int stride_z, 
+    const int stride_x,
+    const int stride_y,
+    const int stride_z,
     // padding
-    const int *__restrict__ padding, 
+    const int *__restrict__ padding,
     // hash table (value), (size, )
-    const uint64_t *val, 
+    const uint64_t *val,
     // hash table (index), (size, )
-    const int *idx, 
+    const int *idx,
     // input-major mapping, (innz * (kv - 1))
     int *map,
-    // the counter of nnz for each each kernel offsets, (kv - 1)               
+    // the counter of nnz for each each kernel offsets, (kv - 1)
     int *knnz,
     // whether to compute center kernel offset separately
-    bool separate_mid)             
+    bool separate_mid)
 {
     // a thread for a coord
-    int output_id = blockIdx.x * _NNZS_PER_BLOCK + threadIdx.y;  
+    int output_id = blockIdx.x * _NNZS_PER_BLOCK + threadIdx.y;
     // exclude illegal id number
     if (output_id >= onnz){return;}
     // shared mem to store the output coord
@@ -187,7 +187,7 @@ __global__ void _queryhash_sp(
     shm[threadIdx.y * 4 + 2] = coord[output_id * 4 + 2] * stride_y - padding[1];
     shm[threadIdx.y * 4 + 3] = coord[output_id * 4 + 3] * stride_z - padding[2];
     // decode kernel size
-    int mid_ks = (ksx - 1) / 2 * ksy * ksz + 
+    int mid_ks = (ksx - 1) / 2 * ksy * ksz +
         (ksy - 1) / 2 * ksz + (ksz - 1) / 2;
 #pragma unroll
     for (int k = 0; ; k += _KOFS_THREADS){
@@ -204,8 +204,8 @@ __global__ void _queryhash_sp(
         ky += (ksy % 2 == 0 || ksy == 1) ? 0 : 1;
         kz += (ksz % 2 == 0 || ksz == 1) ? 0 : 1;
         // hash query
-        uint64_t target_val = coord_hash(shm[threadIdx.y * 4], 
-            shm[threadIdx.y * 4 + 1] + kx, shm[threadIdx.y * 4 + 2] + ky, 
+        uint64_t target_val = coord_hash(shm[threadIdx.y * 4],
+            shm[threadIdx.y * 4 + 1] + kx, shm[threadIdx.y * 4 + 2] + ky,
             shm[threadIdx.y * 4 + 3] + kz);
         uint64_t target_id = target_val % (uint64_t)size;
         // find target or empty
@@ -224,7 +224,7 @@ __global__ void _queryhash_sp(
 
 
 __global__ void mapping_counter(
-                const int nnz, 
+                const int nnz,
                 const int kv,
                 const int *map,
                 int *nnz_neighbor
@@ -242,8 +242,8 @@ __global__ void mapping_counter(
 
 
 __global__ void mapping_decoder(
-                const int sum_nnz, 
-                const int *__restrict__ kernel_pos,  
+                const int sum_nnz,
+                const int *__restrict__ kernel_pos,
                 int *map){
     // a thread for a mapping
     int mid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -256,23 +256,23 @@ __global__ void mapping_decoder(
 }
 
 
-/* 
-The amount of kernel offsets is a small number [1, 125], 
-so no more optimization is needed. The hand-written 
-kernel can effectively remove the overhead to call 
+/*
+The amount of kernel offsets is a small number [1, 125],
+so no more optimization is needed. The hand-written
+kernel can effectively remove the overhead to call
 Thrust::exclusive_scan function.
 */
 __global__ void exclusive_scan_for_kernel(
-                const int kv, 
-                const int *input, 
+                const int kv,
+                const int *input,
                 int *output
 ){
     // a thread for a scan
     const int id = threadIdx.x + 1;
     if (id >= kv){return;}
     float acc = 0.0f;
-#pragma unroll 
-    for (int i = 0; i < id; i++){  
+#pragma unroll
+    for (int i = 0; i < id; i++){
         acc += input[i];
     }
     output[id] = acc;
@@ -280,9 +280,9 @@ __global__ void exclusive_scan_for_kernel(
 
 
 __global__ void exclusive_scan_for_kernel_quantified(
-                const int kv, 
-                const int *input, 
-                const int q, 
+                const int kv,
+                const int *input,
+                const int q,
                 int *output,
                 int *qoutput
 ){
@@ -291,8 +291,8 @@ __global__ void exclusive_scan_for_kernel_quantified(
     if (id >= kv){return;}
     int acc = 0;
     int qacc = 0;
-#pragma unroll 
-    for (int i = 0; i < id; i++){  
+#pragma unroll
+    for (int i = 0; i < id; i++){
         acc += input[i];
         qacc += (input[i] + q - 1) / q * q;
     }
@@ -306,19 +306,19 @@ Make sure the coordinates are decoded by batch-first order.
 */
 template <int _BOUND>
 __global__ void coordsDownsample(
-                // amount of non-zeros in input 
+                // amount of non-zeros in input
                 const int innz,
                 // stride of each dimension
                 const int stride_x,
-                const int stride_y, 
-                const int stride_z, 
+                const int stride_y,
+                const int stride_z,
                 // input coordinates, (innz, 4)
-                const int *__restrict__ icoords, 
+                const int *__restrict__ icoords,
                 // coded downsampled output coords, (innz, 1)
                 int64_t *ocoords_code
 ){
     const int nid = blockIdx.x * blockDim.x + threadIdx.x;
-    if (nid >= innz) {return;} 
+    if (nid >= innz) {return;}
     int64_t code;
     // manually accumulation
     // code = b
@@ -338,29 +338,29 @@ Make sure the coordinates are decoded by batch-first order.
 */
 template <int _BOUND, int _NNZS_PER_BLOCK>
 __global__ void coordsDownsampleExpand(
-                // amount of non-zeros in input 
+                // amount of non-zeros in input
                 const int innz,
                 // kernel volume
-                const int kv, 
+                const int kv,
                 // kernel size
                 const int ksx,
-                const int ksy, 
-                const int ksz, 
+                const int ksy,
+                const int ksz,
                 // tensor stride of each dimension
-                const int t_stride_x, 
-                const int t_stride_y, 
-                const int t_stride_z, 
+                const int t_stride_x,
+                const int t_stride_y,
+                const int t_stride_z,
                 // stride of each dimension
                 const int stride_x,
-                const int stride_y, 
-                const int stride_z, 
+                const int stride_y,
+                const int stride_z,
                 // padding of each dimension
-                const int *__restrict__ padding, 
+                const int *__restrict__ padding,
                 // coords boundary
-                const int *__restrict__ min, 
-                const int *__restrict__ max, 
+                const int *__restrict__ min,
+                const int *__restrict__ max,
                 // input coordinates, (innz, 4)
-                const int *__restrict__ icoords, 
+                const int *__restrict__ icoords,
                 // coded downsampled output coords hashtable
                 int64_t *ocoords_code
 ){
@@ -402,22 +402,22 @@ __global__ void coordsDownsampleExpand(
         if ((cand_y_div < min[1]) || (cand_y_div > max[1]) || (cand_y % stride_y != 0)){continue;}
         if ((cand_z_div < min[2]) || (cand_z_div > max[2]) || (cand_z % stride_z != 0)){continue;}
         // write into hashtable
-        ocoords_code[nid * kv + kp] = 
+        ocoords_code[nid * kv + kp] =
             ((shm[threadIdx.y * 4] * _BOUND + cand_x_div) * _BOUND + cand_y_div) * _BOUND + cand_z_div;
     }
 }
 
 
 /*
-The weights used for linear coding limit the coordinates to 
+The weights used for linear coding limit the coordinates to
 the range of [0, _BOUND).
 */
 template <int _BOUND>
 __global__ void coordsGenerator(
-                // amount of non-zeros in output 
-                const int onnz, 
+                // amount of non-zeros in output
+                const int onnz,
                 // coded downsampled output coords, (onnz, 1)
-                const int64_t *__restrict__ ocoords_code, 
+                const int64_t *__restrict__ ocoords_code,
                 // decoded output coordinates, (onnz, 4)
                 int *ocoords
 ){
@@ -437,4 +437,3 @@ __global__ void coordsGenerator(
     // code = b
     ocoords[nid * 4] = code;
 }
-
