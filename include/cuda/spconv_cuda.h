@@ -1,4 +1,7 @@
+#include <ATen/ATen.h>
 #include <torch/extension.h>
+#include <torch/python.h>
+#include <torch/torch.h>
 #include <tuple>
 #include <vector>
 

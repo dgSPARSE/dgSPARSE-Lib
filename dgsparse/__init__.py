@@ -38,9 +38,9 @@ if torch.version.cuda is not None and cuda_version != -1:  # pragma: no cover
             f"matches your PyTorch install."
         )
 
-from .spmm import spmm_sum, spmm_max, spmm_min, spmm_mean  # noqa
-from .storage import Storage
-from .tensor import SparseTensor
+from .spmm import *
+from .storage import *
+from .tensor import *
 
 # from .tensor import SparseTensor
 

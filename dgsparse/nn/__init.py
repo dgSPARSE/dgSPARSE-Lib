@@ -1,2 +1,2 @@
-from .gcnconv import GCNConv, GCN
-from .ginconv import GINConv, GIN
+from .gcnconv import *
+from .ginconv import *

@@ -1,17 +1,17 @@
-#include "../include/cuda/spconv_cuda.h"
 #include "../include/cuda/sparse_mapping.h"
+#include "../include/cuda/spconv_cuda.h"
 #include <torch/all.h>
 #include <torch/extension.h>
 #include <torch/python.h>
-#include <torch/script.h>
 #include <torch/torch.h>
 #include <vector>
 
 /*
-  [hk]: sparse mapping is supposed to be added to the spconv autograd class as a part of fwd pass.
-        To perform the mapping reuse in sparse convolution network, a Sparse Tensor class should be defined, 
-        which carries the genrated mapping through the network. 
-        The spconv class decides if a new mapping should be computed in the fwd pass.
+  [hk]: sparse mapping is supposed to be added to the spconv autograd class as a
+  part of fwd pass. To perform the mapping reuse in sparse convolution network,
+  a Sparse Tensor class should be defined, which carries the genrated mapping
+  through the network. The spconv class decides if a new mapping should be
+  computed in the fwd pass.
   */
 torch::Tensor spconv(torch::Tensor in_feats, torch::Tensor kernel,
                      torch::Tensor kpos, torch::Tensor qkpos,
