@@ -4,7 +4,7 @@ from torch_geometric.utils import to_scipy_sparse_matrix
 import torch
 
 
-class GraphDataset():
+class GraphDataset:
     def __init__(self, name: str, device):
         self.name = name
         self.device = device
@@ -47,7 +47,11 @@ class GraphDataset():
         weight = torch.ones(col.shape, requires_grad=True)
         self.num_nodes = graph.num_nodes
         self.tcsr = torch.sparse_csr_tensor(
-            rowptr, col, weight, dtype=torch.float, size=(self.num_nodes, self.num_nodes),  requires_grad=True, device=self.device
+            rowptr,
+            col,
+            weight,
+            dtype=torch.float,
+            size=(self.num_nodes, self.num_nodes),
+            requires_grad=True,
+            device=self.device,
         )
-        
-
