@@ -38,18 +38,23 @@ class GINConv(nn.Module):
             rst = self.activation(rst)
         return rst
 
-
     def aggregate_neigh(self, edge_index, X, num_nodes, algorithm):
-        adj_t = torch_sparse.SparseTensor(row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes))
+        adj_t = torch_sparse.SparseTensor(
+            row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes)
+        )
         if not adj_t.has_value():
-            adj_t = adj_t.fill_value(1.)
+            adj_t = adj_t.fill_value(1.0)
         rowptr, col, value = adj_t.csr()
         rowptr = rowptr.int()
         col = col.int()
         tcsr = torch.sparse_csr_tensor(
-            rowptr, col, value, dtype=torch.float, size=(num_nodes, num_nodes),
+            rowptr,
+            col,
+            value,
+            dtype=torch.float,
+            size=(num_nodes, num_nodes),
             requires_grad=True,
-            device=edge_index.device
+            device=edge_index.device,
         )
         dcsr = SparseTensor.from_torch_sparse_csr_tensor(
             tcsr.clone().detach(), True, requires_grad=True
@@ -104,6 +109,3 @@ class GIN(nn.Module):
     @property
     def eps(self):
         return self.conv1.eps
-
-
-
