@@ -16,7 +16,7 @@ ENV AUDITWHEEL_POLICY=${POLICY} AUDITWHEEL_ARCH=${PLATFORM} AUDITWHEEL_PLAT=${PO
 COPY install/entry.sh /install/entry.sh
 RUN bash /install/entry.sh
 
-# Environment variables
+# CUDA Environment variables
 ENV PATH=/usr/local/nvidia/bin:${PATH}
 ENV PATH=/usr/local/cuda/bin:${PATH}
 ENV CUDA_HOME=/usr/local/cuda
@@ -26,6 +26,9 @@ ENV LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/nvidia/lib64:${LIBRARY_PATH}
 ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}
 ENV CUDA_VISIBLE_DEVICES=0,1,2,3
 
+# MKL Environment variables
+ENV MKL=/opt/intel/mkl/
+ENV LD_LIBRARY_PATH=$MKL/lib/intel64:$LD_LIBRARY_PATH
 
 COPY install/build_wheel.sh /install/build_wheel.sh
 RUN bash /install/build_wheel.sh

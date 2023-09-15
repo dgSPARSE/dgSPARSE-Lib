@@ -27,7 +27,6 @@ function environment_setup {
         bash ${Anaconda} -b -p /usr/local/anaconda3
         rm ${Anaconda}
         echo "export PATH="/usr/local/anaconda3/bin:$PATH"" > ~/.bashrc
-        echo "export MKLROOT=/opt/intel/mkl/include" >> ~/.bashrc
         source ~/.bashrc
     fi
 }

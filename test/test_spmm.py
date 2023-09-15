@@ -62,14 +62,14 @@ class SpMMMax:
     def forward_check(self):
         out_check = torch.sparse.mm(
             self.tcsr.cpu(), self.input_feature.cpu(), "max"
-        ).cuda()
+        ).to(self.device)
         out = spmm_max(self.dcsr, self.input_feature, self.algorithm)
         assert torch.allclose(out, out_check) == True
 
     def backward_check(self):
         out_check = torch.sparse.mm(
             self.tcsr.cpu(), self.input_feature.cpu(), "max"
-        ).cuda()
+        ).to(self.device)
         out_check.sum().backward()
         dX_check = self.input_feature.grad
         dA_check = self.tcsr.grad
@@ -101,14 +101,14 @@ class SpMMMin:
     def forward_check(self):
         out_check = torch.sparse.mm(
             self.tcsr.cpu(), self.input_feature.cpu(), "min"
-        ).cuda()
+        ).to(self.device)
         out = spmm_min(self.dcsr, self.input_feature, self.algorithm)
         assert torch.allclose(out, out_check) == True
 
     def backward_check(self):
         out_check = torch.sparse.mm(
             self.tcsr.cpu(), self.input_feature.cpu(), "min"
-        ).cuda()
+        ).to(self.device)
         out_check.sum().backward()
         dX_check = self.input_feature.grad
         dA_check = self.tcsr.grad
@@ -140,14 +140,14 @@ class SpMMMean:
     def forward_check(self):
         out_check = torch.sparse.mm(
             self.tcsr.cpu(), self.input_feature.cpu(), "mean"
-        ).cuda()
+        ).to(self.device)
         out = spmm_mean(self.dcsr, self.input_feature, self.algorithm)
         assert torch.allclose(out, out_check) == True
 
     def backward_check(self):
         out_check = torch.sparse.mm(
             self.tcsr.cpu(), self.input_feature.cpu(), "mean"
-        ).cuda()
+        ).to(self.device)
         out_check.sum().backward()
         dX_check = self.input_feature.grad
         dA_check = self.tcsr.grad
