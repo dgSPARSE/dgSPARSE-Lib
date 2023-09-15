@@ -79,7 +79,7 @@ class GIN(nn.Module):
         aggregator_type="sum",
         init_eps=0,
         learn_eps=False,
-        activation=None,
+        activation=F.relu,
         cached=False,
     ):
         super().__init__()
