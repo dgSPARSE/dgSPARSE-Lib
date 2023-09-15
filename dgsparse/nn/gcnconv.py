@@ -13,10 +13,10 @@ class GCNConv(nn.Module):
         super().__init__()
         self.W = nn.Linear(in_size, out_size, bias=False)
         self.cached = cached
-        self._cached_adj_t = None
+        self._cached_dcsr = None
 
     def forward(self, edge_index, x, num_nodes):
-        cache = self._cached_adj_t
+        cache = self._cached_dcsr
         if cache is None:
             adj_t = self.gcn_norm(edge_index, num_nodes)
             rowptr, col, value = adj_t.csr()
@@ -35,7 +35,7 @@ class GCNConv(nn.Module):
                 tcsr.clone().detach(), True, requires_grad=True
             )
             if self.cached:
-                self._cached_adj_t = dcsr
+                self._cached_dcsr = dcsr
         else:
             dcsr = cache
         x = self.W(x)
