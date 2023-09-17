@@ -27,8 +27,8 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/nvidia/lib64:${LD_LIBRARY_P
 ENV CUDA_VISIBLE_DEVICES=0,1,2,3
 
 # MKL Environment variables
-ENV MKL=/opt/intel/mkl/
-ENV LD_LIBRARY_PATH=$MKL/lib/intel64:$LD_LIBRARY_PATH
+ENV MKL=/opt/intel/mkl
+ENV LD_LIBRARY_PATH=$MKL/lib/intel64:${LD_LIBRARY_PATH}
 
 COPY install/build_wheel.sh /install/build_wheel.sh
 RUN bash /install/build_wheel.sh

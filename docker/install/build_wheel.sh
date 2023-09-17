@@ -4,6 +4,7 @@ source ~/.bashrc
 function build_requirements {
     pip install mkl-devel
     pip install mkl-service
+    conda install -c anaconda mkl 
 }
 
 
