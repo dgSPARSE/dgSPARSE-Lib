@@ -15,7 +15,7 @@ from torch.utils.cpp_extension import (
     CUDAExtension,
 )
 
-__version__ = "0.1"
+__version__ = "0.1.1"
 URL = "https://github.com/"
 
 WITH_CUDA = False
