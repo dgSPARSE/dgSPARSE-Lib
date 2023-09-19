@@ -1,6 +1,6 @@
 # dgSPARSE Library
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Latest Release](https://img.shields.io/github/v/release/dgsparse/dgsparse-library)](https://github.com/dgSPARSE/dgSPARSE-Library/releases/)
 
 ## Introdution
