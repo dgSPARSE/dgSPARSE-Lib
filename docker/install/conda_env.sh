@@ -5,7 +5,7 @@ function pkg_requirements {
     pip install mkl-devel
     pip install mkl-service
     pip install twine
-    conda install -c anaconda mkl 
+    conda install -c anaconda mkl
 }
 
 
