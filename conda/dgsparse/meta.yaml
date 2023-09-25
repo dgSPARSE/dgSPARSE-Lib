@@ -1,0 +1,40 @@
+package:
+  name: dgsparse
+  version: 0.1.1
+
+source:
+  path: ../..
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - mkl
+  host:
+    - pip
+    - python {{ environ.get('PYTHON_VERSION') }}
+    - python {{environ.get('CONDA_PYTORCH_CONSTRAINT')}}
+    - python {{environ.get('CONDA_CUDATOOLKIT_CONSTRAINT')}}
+  run:
+    - scipy
+    - mkl
+    - python {{ environ.get('PYTHON_VERSION') }}
+    - python {{environ.get('CONDA_PYTORCH_CONSTRAINT')}}
+    - python {{environ.get('CONDA_CUDATOOLKIT_CONSTRAINT')}}
+
+build:
+  string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}
+  number: 1
+  script_env:
+    - FORCE_CUDA
+    - TORCH_CUDA_ARCH_LIST
+  preserve_egg_dir: True
+
+test:
+  imports:
+    - dgsparse
+
+about:
+  home: https://github.com/dgSPARSE/dgSPARSE-Lib
+  license: MIT
+  summary: PyTorch-Based Fast and Efficient Processing for Various Machine Learning Applications with Diverse Sparsity
