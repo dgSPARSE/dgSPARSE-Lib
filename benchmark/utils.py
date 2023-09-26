@@ -69,5 +69,7 @@ class GraphDataset:
         )
         self.adj_t = torch_sparse.SparseTensor.from_torch_sparse_csr_tensor(adj_t)
         self.features = graph.x.to(self.device)
-        
-        self.dgl_A = dglsp.spmatrix(graph.edge_index, shape=(self.num_nodes, self.num_nodes)).to(self.device)
+
+        self.dgl_A = dglsp.spmatrix(
+            graph.edge_index, shape=(self.num_nodes, self.num_nodes)
+        ).to(self.device)

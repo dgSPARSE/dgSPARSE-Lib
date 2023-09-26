@@ -39,7 +39,7 @@ class SparseTensor(object):
             has_value=has_value,
             # is_sorted=True,
         )
-    
+
     # @classmethod
     # def from_edge_index(
     #     self, edge_index: torch.Tensor, edge_attr: Optional[torch.Tensor] = None, has_value: bool = True
@@ -47,7 +47,6 @@ class SparseTensor(object):
     #     return SparseTensor(
     #         row=edge_index[0], rowptr=None, col=edge_index[1], values=edge_attr, has_value=has_value
     #     )
-
 
     # def csr(self) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
     #     return self.storage.rowptr(), self.storage.col(), self.storage.value()

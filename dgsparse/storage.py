@@ -100,8 +100,17 @@ class Storage(object):
     def empty(self):
         row = torch.tensor([], dtype=torch.int)
         col = torch.tensor([], dtype=torch.int)
-        return Storage(row=row, rowptr=None, col=col, values=None, colptr=None, csc2csr=None, csr2csc=None, colcount=None)
-    
+        return Storage(
+            row=row,
+            rowptr=None,
+            col=col,
+            values=None,
+            colptr=None,
+            csc2csr=None,
+            csr2csc=None,
+            colcount=None,
+        )
+
     # def row(self) -> torch.Tensor:
     #     row = self._row
     #     if row is not None:
@@ -117,7 +126,7 @@ class Storage(object):
     #         return row
 
     #     raise ValueError
-    
+
     # def rowptr(self) -> torch.Tensor:
     #     rowptr = self._rowptr
     #     if rowptr is not None:
@@ -130,7 +139,7 @@ class Storage(object):
     #         return rowptr
 
     #     raise ValueError
-    
+
     # def colptr(self) -> torch.Tensor:
     #     colptr = self._colptr
     #     if colptr is not None:
@@ -145,7 +154,7 @@ class Storage(object):
     #         torch.cumsum(self.colcount(), dim=0, out=colptr[1:])
     #     self._colptr = colptr
     #     return colptr
-    
+
     # def csr2csc(self) -> torch.Tensor:
     #     csr2csc = self._csr2csc
     #     if csr2csc is not None:
@@ -155,7 +164,7 @@ class Storage(object):
     #     csr2csc = idx.argsort()
     #     self._csr2csc = csr2csc
     #     return csr2csc
-    
+
     # def colcount(self) -> torch.Tensor:
     #     colcount = self._colcount
     #     if colcount is not None:
@@ -169,10 +178,10 @@ class Storage(object):
     #                                dim_size=self.sparse_sizes[1])
     #     self._colcount = colcount
     #     return colcount
-    
+
     # def col(self) -> torch.Tensor:
     #     return self._col
-    
+
     # def value(self) -> Optional[torch.Tensor]:
     #     return self._values
 
@@ -197,7 +206,9 @@ class Storage(object):
         device = self._col.device
         # idx = torch.range(0, 100, device=device)
         idx = self._values
-        colptr, row, csr2csc = torch.ops.dgsparse_spmm.csr2csc(rows, cols, self._rowptr, self._col, idx)
+        colptr, row, csr2csc = torch.ops.dgsparse_spmm.csr2csc(
+            rows, cols, self._rowptr, self._col, idx
+        )
         if self._row is None:
             self._row = row
         if self._colptr is None:
