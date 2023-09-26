@@ -3,6 +3,7 @@ from ogb.nodeproppred import PygNodePropPredDataset
 from torch_geometric.utils import to_scipy_sparse_matrix
 import torch
 import torch_sparse
+import dgl.sparse as dglsp
 
 
 class GraphDataset:
@@ -42,6 +43,7 @@ class GraphDataset:
         else:
             raise KeyError("Unknown dataset {}.".format(self.name))
         scipy_coo = to_scipy_sparse_matrix(graph.edge_index, num_nodes=graph.num_nodes)
+        print(graph)
         scipy_csr = scipy_coo.tocsr()
         rowptr = scipy_csr.indptr
         col = scipy_csr.indices
@@ -67,3 +69,5 @@ class GraphDataset:
         )
         self.adj_t = torch_sparse.SparseTensor.from_torch_sparse_csr_tensor(adj_t)
         self.features = graph.x.to(self.device)
+        
+        self.dgl_A = dglsp.spmatrix(graph.edge_index, shape=(self.num_nodes, self.num_nodes)).to(self.device)
