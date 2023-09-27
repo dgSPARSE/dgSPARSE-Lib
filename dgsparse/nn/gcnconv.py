@@ -17,13 +17,14 @@ class GCNConv(nn.Module):
         x = self.W(x)
         x = spmm_sum(dcsr, x, 0)
         return x
-    
+
+
 class GCN(nn.Module):
     def __init__(self, in_size, out_size, hidden_size):
         super().__init__()
         self.conv1 = GCNConv(in_size, hidden_size)
         self.conv2 = GCNConv(hidden_size, out_size)
-    
+
     def forward(self, dcsr, x):
         x = self.conv1(dcsr, x)
         x = F.relu(x)
@@ -66,5 +67,3 @@ def get_gcn_dcsr_from_edge_index(edge_index, num_nodes):
         tcsr.clone().detach(), True, requires_grad=True
     )
     return dcsr
-
-
