@@ -1,4 +1,4 @@
-#include "../include/cpu/spmm_cpu.h"
+// #include "../include/cpu/spmm_cpu.h"
 #include "../include/cuda/spmm_cuda.h"
 #include <torch/all.h>
 #include <torch/extension.h>
@@ -85,15 +85,7 @@ torch::Tensor spmm_sum(torch::Tensor rowptr, torch::Tensor col,
 std::vector<torch::Tensor> csr2csc(int64_t rows, int64_t cols,
                                    torch::Tensor rowptr, torch::Tensor colind,
                                    torch::Tensor values) {
-  if (rowptr.device().is_cuda()) {
-#ifdef WITH_CUDA
-    return csr2csc_cuda(rowptr, colind, values);
-#else
-    AT_ERROR("Not compiled with CUDA support");
-#endif
-  } else {
-    return csr2csc_cpu(rows, cols, rowptr, colind, values);
-  }
+  return csr2csc_cuda(rowptr, colind, values);
 }
 
 class SpMMMax : public torch::autograd::Function<SpMMMax> {

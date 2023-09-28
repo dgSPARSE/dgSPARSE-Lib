@@ -9,18 +9,16 @@ requirements:
   build:
     - python
     - setuptools
-    - mkl
   host:
     - pip
     - python {{ environ.get('PYTHON_VERSION') }}
-    - python {{environ.get('CONDA_PYTORCH_CONSTRAINT')}}
-    - python {{environ.get('CONDA_CUDATOOLKIT_CONSTRAINT')}}
+    - {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+    - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
   run:
     - scipy
-    - mkl
     - python {{ environ.get('PYTHON_VERSION') }}
-    - python {{environ.get('CONDA_PYTORCH_CONSTRAINT')}}
-    - python {{environ.get('CONDA_CUDATOOLKIT_CONSTRAINT')}}
+    - {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
+    - {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
 build:
   string: py{{ environ.get('PYTHON_VERSION').replace('.', '') }}_torch_{{ environ['TORCH_VERSION'] }}_{{ environ['CUDA_VERSION'] }}

@@ -1,6 +1,5 @@
 import warnings
 from typing import Optional, List, Tuple
-from torch_scatter import scatter_add
 
 import torch
 
@@ -119,7 +118,6 @@ class Storage(object):
     #     rowptr = self._rowptr
     #     if rowptr is not None:
     #         print(rowptr)
-    #         print("将要执行ptr2ind")
     #         row = torch.ops.dgsparse_convert.ptr2ind(rowptr, self._col.numel())
     #         print(rowptr)
     #         self._row = row

@@ -26,7 +26,7 @@ source activate "pytorch_${tv}"
 cd /home
 git clone https://github.com/dgSPARSE/dgSPARSE-Lib.git
 cd dgSPARSE-Lib
-python setup.py build install --mandatory
+FORCE_CUDA=1 python setup.py build install
 python setup.py bdist_wheel
 cd dist/
 exclude_so="libtorch.so libtorch_cpu.so libtorch_cuda.so libc10.so libtorch_python.so"

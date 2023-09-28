@@ -19,19 +19,11 @@ __version__ = "0.1.1"
 URL = "https://github.com/"
 
 WITH_CUDA = False
-if "--mandatory" in sys.argv:
-    WITH_CUDA = True
-    sys.argv.remove("--mandatory")
 if torch.cuda.is_available():
     WITH_CUDA = CUDA_HOME is not None
-suffices = ["cuda", "cpu"] if WITH_CUDA else ["cpu"]
+suffices = ["cuda"] if WITH_CUDA else ["cpu"]
 if os.getenv("FORCE_CUDA", "0") == "1":
-    suffices = ["cuda", "cpu"]
-if os.getenv("FORCE_ONLY_CUDA", "0") == "1":
     suffices = ["cuda"]
-if os.getenv("FORCE_ONLY_CPU", "0") == "1":
-    suffices = ["cpu"]
-
 print(f"Building with CUDA: {WITH_CUDA}, ", "CUDA_HOME:", CUDA_HOME)
 
 
@@ -48,11 +40,6 @@ def get_extensions():
         extra_compile_args = {"cxx": ["-O2"]}
         extra_link_args = [
             "-s",
-            "-lmkl_gnu_thread",
-            "-lmkl_intel_ilp64",
-            "-lmkl_sequential",
-            "-lmkl_core",
-            "-lpthread",
             "-lm",
             "-ldl",
         ]
@@ -68,19 +55,15 @@ def get_extensions():
         name = main.split(os.sep)[-1][:-4]
         sources = [main]
 
-        path = osp.join(extensions_dir, "cpu", f"{name}_cpu.cpp")
-        if osp.exists(path):
-            sources += [path]
-
         path = osp.join(extensions_dir, "cuda", f"{name}_cuda.cu")
         if suffix == "cuda" and osp.exists(path):
             sources += [path]
-        Extension = CppExtension if suffix == "cpu" else CUDAExtension
+        Extension = CUDAExtension
         if name == "version":
             extension = Extension(
                 f"dgsparse._C",
                 sources,
-                include_dirs=[extensions_dir],
+                # include_dirs=[extensions_dir],
                 define_macros=define_macros,
                 undef_macros=undef_macros,
                 extra_compile_args=extra_compile_args,
@@ -91,7 +74,7 @@ def get_extensions():
             extension = Extension(
                 f"dgsparse._{name}_{suffix}",
                 sources,
-                include_dirs=[extensions_dir],
+                # include_dirs=[extensions_dir],
                 define_macros=define_macros,
                 undef_macros=undef_macros,
                 extra_compile_args=extra_compile_args,
@@ -105,8 +88,8 @@ def get_extensions():
 
 install_requires = [
     "scipy",
-    "mkl-devel",  # mkl library
-    "mkl-service",  # to support "import mkl"
+    # "mkl-devel",  # mkl library
+    # "mkl-service",  # to support "import mkl"
 ]
 
 test_requires = [

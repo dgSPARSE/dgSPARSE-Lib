@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 import os
-import mkl
+# import mkl
 from scipy.io import mmread
 
 # from dgsparse import spmm_sum
@@ -44,5 +44,5 @@ def test_csr2csc():
     gc = Csr2Csc("../example/data/p2p-Gnutella31.mtx", 0)
     gc.check()
     # cpu check
-    gc = Csr2Csc("../example/data/p2p-Gnutella31.mtx", "cpu")
-    gc.check()
+    # gc = Csr2Csc("../example/data/p2p-Gnutella31.mtx", "cpu")
+    # gc.check()
