@@ -4,6 +4,8 @@ from torch_geometric.utils import to_scipy_sparse_matrix
 import torch
 import torch_sparse
 import dgl.sparse as dglsp
+from dgl.ops import gspmm
+import dgl
 
 
 class GraphDataset:
@@ -44,6 +46,11 @@ class GraphDataset:
             raise KeyError("Unknown dataset {}.".format(self.name))
         scipy_coo = to_scipy_sparse_matrix(graph.edge_index, num_nodes=graph.num_nodes)
         print(graph)
+        dgl_graph = dgl.from_scipy(scipy_coo)
+        self.dgl_graph = dgl_graph.to(self.device)
+        # print(dgl_graph)
+        # print(dgl_graph.adj())
+        # print(dgl_graph.adj().val.sum())
         scipy_csr = scipy_coo.tocsr()
         rowptr = scipy_csr.indptr
         col = scipy_csr.indices
@@ -70,6 +77,6 @@ class GraphDataset:
         self.adj_t = torch_sparse.SparseTensor.from_torch_sparse_csr_tensor(adj_t)
         self.features = graph.x.to(self.device)
 
-        self.dgl_A = dglsp.spmatrix(
-            graph.edge_index, shape=(self.num_nodes, self.num_nodes)
-        ).to(self.device)
+        # self.dgl_A = dglsp.spmatrix(
+        #     graph.edge_index, shape=(self.num_nodes, self.num_nodes)
+        # ).to(self.device)

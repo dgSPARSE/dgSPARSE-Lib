@@ -6,7 +6,7 @@ import torch_sparse
 from torch_sparse import matmul
 import time
 import tqdm
-import dgl.sparse as dglsp
+import dgl
 
 
 class SpMMSum:
@@ -18,7 +18,8 @@ class SpMMSum:
             self.tcsr.clone().detach(), True, requires_grad=True
         )
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
@@ -29,23 +30,23 @@ class SpMMSum:
     def forward_check(self):
         # warm up
         for i in range(10):
-            out_check = matmul(self.adj_t, self.input_feature, reduce="sum")
+            out = matmul(self.adj_t, self.input_feature, reduce="sum")
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-            out_check = matmul(self.adj_t, self.input_feature, reduce="sum")
-            torch.cuda.synchronize()
+            out = matmul(self.adj_t, self.input_feature, reduce="sum")
+        torch.cuda.synchronize()
         end = time.time()
         torch_sparse_time = end - start
 
         # warm up
         for i in range(10):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "sum", self.input_feature, self.dgl_graph.adj().val)
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
-            torch.cuda.synchronize()
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "sum", self.input_feature, self.dgl_graph.adj().val)
+        torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
 
@@ -56,7 +57,7 @@ class SpMMSum:
         start = time.time()
         for i in range(100):
             out = spmm_sum(self.dcsr, self.input_feature, self.algorithm)
-            torch.cuda.synchronize()
+        torch.cuda.synchronize()
         end = time.time()
         dgsparse_time = end - start
 
@@ -67,7 +68,7 @@ class SpMMSum:
         # #warm up
         # for i in range(10):
         #     out_check = matmul(self.adj_t, self.input_feature, reduce="sum")
-
+        
         # torch.cuda.synchronize()
         # start = time.time()
         # for i in range(100):
@@ -81,7 +82,7 @@ class SpMMSum:
         # #warm up
         # for i in range(10):
         #     out = spmm_sum(self.dcsr, self.input_feature, self.algorithm)
-
+        
         # torch.cuda.synchronize()
         # start = time.time()
         # for i in range(100):
@@ -102,7 +103,8 @@ class SpMMMax:
             self.tcsr.clone().detach(), True, requires_grad=True
         )
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
@@ -122,11 +124,11 @@ class SpMMMax:
 
         # warm up
         for i in range(10):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "max", self.input_feature, self.dgl_graph.adj().val)
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "max", self.input_feature, self.dgl_graph.adj().val)
         torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
@@ -157,7 +159,8 @@ class SpMMMin:
             self.tcsr.clone().detach(), True, requires_grad=True
         )
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
@@ -177,11 +180,11 @@ class SpMMMin:
 
         # warm up
         for i in range(10):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "min", self.input_feature, self.dgl_graph.adj().val)
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "min", self.input_feature, self.dgl_graph.adj().val)
         torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
@@ -212,7 +215,8 @@ class SpMMMean:
             self.tcsr.clone().detach(), True, requires_grad=True
         )
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
@@ -232,11 +236,11 @@ class SpMMMean:
 
         # warm up
         for i in range(10):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "mean", self.input_feature, self.dgl_graph.adj().val)
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-            out = dglsp.spmm(self.dgl_A, self.input_feature)
+            out = dgl.ops.gspmm(self.dgl_graph, "mul", "mean", self.input_feature, self.dgl_graph.adj().val)
         torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
@@ -299,9 +303,9 @@ def test_spmm_time(dataset, device, reduce="sum"):
 
 
 if __name__ == "__main__":
-    # datasets = ["cora", "citeseer", "pubmed", "ppi"]
+    datasets = ["cora"]
     device = "cuda:7" if torch.cuda.is_available() else "cpu"
-    datasets = ["cora", "citeseer", "pubmed", "ppi", "reddit"]
+    # datasets = ["cora", "citeseer", "pubmed", "ppi", "reddit"]
     for dataset in datasets:
         test_spmm_time(dataset, device, reduce="sum")
         test_spmm_time(dataset, device, reduce="max")
