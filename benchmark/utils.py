@@ -45,7 +45,7 @@ class GraphDataset:
         else:
             raise KeyError("Unknown dataset {}.".format(self.name))
         scipy_coo = to_scipy_sparse_matrix(graph.edge_index, num_nodes=graph.num_nodes)
-        print(graph)
+        print(f"graph is: {graph}")
         dgl_graph = dgl.from_scipy(scipy_coo)
         self.dgl_graph = dgl_graph.to(self.device)
         # print(dgl_graph)
