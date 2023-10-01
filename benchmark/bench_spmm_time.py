@@ -68,7 +68,7 @@ class SpMMSum:
         # #warm up
         # for i in range(10):
         #     out_check = matmul(self.adj_t, self.input_feature, reduce="sum")
-        
+
         # torch.cuda.synchronize()
         # start = time.time()
         # for i in range(100):
@@ -82,7 +82,7 @@ class SpMMSum:
         # #warm up
         # for i in range(10):
         #     out = spmm_sum(self.dcsr, self.input_feature, self.algorithm)
-        
+
         # torch.cuda.synchronize()
         # start = time.time()
         # for i in range(100):
