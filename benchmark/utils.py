@@ -15,36 +15,39 @@ class GraphDataset:
         self.get_dataset()
 
     def get_dataset(self):
-        if self.name == "arxiv":
-            arxiv = PygNodePropPredDataset(root="./data/", name="ogbn-arxiv")
+        if self.name == 'arxiv':
+            arxiv = PygNodePropPredDataset(root='./data/', name='ogbn-arxiv')
             graph = arxiv[0]
-        elif self.name == "proteins":
-            proteins = PygNodePropPredDataset(root="./data/", name="ogbn-proteins")
+        elif self.name == 'proteins':
+            proteins = PygNodePropPredDataset(root='./data/',
+                                              name='ogbn-proteins')
             graph = proteins[0]
-        elif self.name == "products":
-            products = PygNodePropPredDataset(root="./data/", name="ogbn-products")
+        elif self.name == 'products':
+            products = PygNodePropPredDataset(root='./data/',
+                                              name='ogbn-products')
             graph = products[0]
-        elif self.name == "pubmed":
-            dataset = datasets.Planetoid(root="./data/", name="Pubmed")
+        elif self.name == 'pubmed':
+            dataset = datasets.Planetoid(root='./data/', name='Pubmed')
             graph = dataset[0]
-        elif self.name == "citeseer":
-            dataset = datasets.Planetoid(root="./data/", name="Citeseer")
+        elif self.name == 'citeseer':
+            dataset = datasets.Planetoid(root='./data/', name='Citeseer')
             graph = dataset[0]
-        elif self.name == "cora":
-            dataset = datasets.Planetoid(root="./data/", name="Cora")
+        elif self.name == 'cora':
+            dataset = datasets.Planetoid(root='./data/', name='Cora')
             graph = dataset[0]
-        elif self.name == "ppi":
-            dataset = datasets.PPI(root="./data/")
+        elif self.name == 'ppi':
+            dataset = datasets.PPI(root='./data/')
             graph = dataset[0]
-        elif self.name == "reddit":
-            dataset = datasets.Reddit(root="./data/Reddit")
+        elif self.name == 'reddit':
+            dataset = datasets.Reddit(root='./data/Reddit')
             graph = dataset[0]
-        elif self.name == "github":
-            dataset = datasets.GitHub(root="./data/")
+        elif self.name == 'github':
+            dataset = datasets.GitHub(root='./data/')
             graph = dataset[0]
         else:
-            raise KeyError("Unknown dataset {}.".format(self.name))
-        scipy_coo = to_scipy_sparse_matrix(graph.edge_index, num_nodes=graph.num_nodes)
+            raise KeyError('Unknown dataset {}.'.format(self.name))
+        scipy_coo = to_scipy_sparse_matrix(graph.edge_index,
+                                           num_nodes=graph.num_nodes)
         print(graph)
         dgl_graph = dgl.from_scipy(scipy_coo)
         self.dgl_graph = dgl_graph.to(self.device)
@@ -74,9 +77,9 @@ class GraphDataset:
             requires_grad=True,
             device=self.device,
         )
-        self.adj_t = torch_sparse.SparseTensor.from_torch_sparse_csr_tensor(adj_t)
+        self.adj_t = torch_sparse.SparseTensor.from_torch_sparse_csr_tensor(
+            adj_t)
         self.features = graph.x.to(self.device)
-
-        # self.dgl_A = dglsp.spmatrix(
-        #     graph.edge_index, shape=(self.num_nodes, self.num_nodes)
-        # ).to(self.device)
+        self.dgl_A = dglsp.spmatrix(graph.edge_index,
+                                    shape=(self.num_nodes,
+                                           self.num_nodes)).to(self.device)

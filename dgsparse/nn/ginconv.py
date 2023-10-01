@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import torch_sparse
-from torch_sparse import fill_diag
 from dgsparse import spmm_sum, spmm_max, spmm_mean, SparseTensor
 
 
@@ -11,7 +10,7 @@ class GINConv(nn.Module):
     def __init__(
         self,
         apply_func=None,
-        aggregator_type="sum",
+        aggregator_type='sum',
         init_eps=0,
         learn_eps=False,
         activation=None,
@@ -26,7 +25,7 @@ class GINConv(nn.Module):
         if learn_eps:
             self.eps = nn.Parameter(torch.FloatTensor([init_eps]))
         else:
-            self.register_buffer("eps", torch.FloatTensor([init_eps]))
+            self.register_buffer('eps', torch.FloatTensor([init_eps]))
 
     def forward(self, edge_index, X, num_nodes):
         neigh = self.aggregate_neigh(edge_index, X, num_nodes, 0)
@@ -39,9 +38,9 @@ class GINConv(nn.Module):
         return rst
 
     def aggregate_neigh(self, edge_index, X, num_nodes, algorithm):
-        adj_t = torch_sparse.SparseTensor(
-            row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes)
-        )
+        adj_t = torch_sparse.SparseTensor(row=edge_index[0],
+                                          col=edge_index[1],
+                                          sparse_sizes=(num_nodes, num_nodes))
         if not adj_t.has_value():
             adj_t = adj_t.fill_value(1.0)
         rowptr, col, value = adj_t.csr()
@@ -56,14 +55,14 @@ class GINConv(nn.Module):
             requires_grad=True,
             device=edge_index.device,
         )
-        dcsr = SparseTensor.from_torch_sparse_csr_tensor(
-            tcsr.clone().detach(), True, requires_grad=True
-        )
-        if self._aggregator_type == "sum":
+        dcsr = SparseTensor.from_torch_sparse_csr_tensor(tcsr.clone().detach(),
+                                                         True,
+                                                         requires_grad=True)
+        if self._aggregator_type == 'sum':
             rst = spmm_sum(dcsr, X, algorithm)
-        elif self._aggregator_type == "max":
+        elif self._aggregator_type == 'max':
             rst = spmm_max(dcsr, X, algorithm)
-        elif self._aggregator_type == "mean":
+        elif self._aggregator_type == 'mean':
             rst = spmm_mean(dcsr, X, algorithm)
         else:
             rst = spmm_sum(dcsr, X, algorithm)
@@ -76,7 +75,7 @@ class GIN(nn.Module):
         in_size,
         out_size,
         hidden_size,
-        aggregator_type="sum",
+        aggregator_type='sum',
         init_eps=0,
         learn_eps=False,
         activation=F.relu,

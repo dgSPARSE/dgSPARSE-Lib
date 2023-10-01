@@ -1,10 +1,12 @@
-#include "../include/cuda/sparse_mapping.h"
-#include "../include/cuda/spconv_cuda.h"
 #include <torch/all.h>
 #include <torch/extension.h>
 #include <torch/python.h>
 #include <torch/torch.h>
+
 #include <vector>
+
+#include "../include/cuda/sparse_mapping.h"
+#include "../include/cuda/spconv_cuda.h"
 
 /*
   [hk]: sparse mapping is supposed to be added to the spconv autograd class as a

@@ -300,7 +300,6 @@ void csrspmm_parreduce_rowbalance(const SpMatCsrDescr_t spmatA, const float *B,
 
 void csrspmm_parreduce_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
                                   const int N, float *C) {
-
   // factor of thread coarsening
   int coarsen_factor = (N % 4 == 0) ? 4 : (N % 2 == 0) ? 2 : 1;
   // number of parallel warps along M-dimension

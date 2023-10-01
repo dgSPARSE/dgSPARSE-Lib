@@ -17,15 +17,13 @@ csrspmm_seqreduce_rowbalance_kernel(const int nr, const int nv, const int nc,
   int stride = row_tile * gridDim.x;
   int row = blockIdx.x * row_tile + subwarp_id;
   int v_id = (blockIdx.y * blockDim.x) + threadIdx.x;
-  if(v_id < nv)
-  {
+  if (v_id < nv) {
     dnInput += v_id;
     dnOutput += v_id;
 
     float res = 0, val;
     int col;
     for (; row < nr; row += stride) {
-
       int start = __ldg(rowPtr + row);
       int end = __ldg(rowPtr + row + 1);
       for (int p = start; p < end; p++) {
@@ -53,8 +51,7 @@ csrspmm_seqreduce_nnzbalance_kernel(const int nr, const int nv, const int nc,
   int v_id = (blockIdx.y * blockDim.x) + threadIdx.x;
   int col = 0;
   float val = 0.0;
-  if(v_id < nv)
-  {
+  if (v_id < nv) {
     if (eid < nnz) {
       int row = binary_search_segment_number<int>(rowPtr, nr, nnz, eid);
       int step = __ldg(rowPtr + row + 1) - eid;
@@ -65,7 +62,7 @@ csrspmm_seqreduce_nnzbalance_kernel(const int nr, const int nv, const int nc,
         if (ii < step) {
           col = __ldg(colIdx + eid) * nv;
           val += __guard_load_default_one<float>(values, eid) *
-                __ldg(dnInput + col + v_id);
+                 __ldg(dnInput + col + v_id);
 
           eid++;
         } else {

@@ -9,7 +9,6 @@ void assertTensor(torch::Tensor &T, torch::ScalarType type) {
 torch::Tensor GSpMM(torch::Tensor A_rowptr, torch::Tensor A_colind,
                     torch::Tensor A_csrVal, torch::Tensor B, REDUCEOP re_op,
                     COMPUTEOP comp_op) {
-
   assertTensor(A_rowptr, torch::kInt32);
   assertTensor(A_colind, torch::kInt32);
   assertTensor(A_csrVal, torch::kFloat32);

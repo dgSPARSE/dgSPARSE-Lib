@@ -1,12 +1,10 @@
 import dgl
-import numpy as np
 import torch as th
 from dgl.nn import GINConv
 import torch
 import dgl.sparse as dglsp
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 g = dgl.graph(([0, 1, 2, 3, 2, 5], [1, 2, 3, 4, 0, 3]))
 feat = th.ones(6, 10)
