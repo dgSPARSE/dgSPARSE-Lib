@@ -17,7 +17,8 @@ class SpMMSum:
         self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
             self.tcsr.clone().detach(), True, requires_grad=True)
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
@@ -67,7 +68,7 @@ class SpMMSum:
         # #warm up
         # for i in range(10):
         #     out_check = matmul(self.adj_t, self.input_feature, reduce="sum")
-
+        
         # torch.cuda.synchronize()
         # start = time.time()
         # for i in range(100):
@@ -81,7 +82,7 @@ class SpMMSum:
         # #warm up
         # for i in range(10):
         #     out = spmm_sum(self.dcsr, self.input_feature, self.algorithm)
-
+        
         # torch.cuda.synchronize()
         # start = time.time()
         # for i in range(100):
@@ -101,7 +102,8 @@ class SpMMMax:
         self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
             self.tcsr.clone().detach(), True, requires_grad=True)
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
@@ -155,7 +157,8 @@ class SpMMMin:
         self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
             self.tcsr.clone().detach(), True, requires_grad=True)
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
@@ -209,7 +212,8 @@ class SpMMMean:
         self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
             self.tcsr.clone().detach(), True, requires_grad=True)
         self.adj_t = data.adj_t
-        self.dgl_A = data.dgl_A
+        # self.dgl_A = data.dgl_A
+        self.dgl_graph = data.dgl_graph
 
         self.device = device
         self.algorithm = algorithm
