@@ -35,7 +35,7 @@ class SpMMSum:
         start = time.time()
         for _ in range(100):
             matmul(self.adj_t, self.input_feature, reduce='sum')
-            torch.cuda.synchronize()
+        torch.cuda.synchronize()
         end = time.time()
         torch_sparse_time = end - start
 
@@ -46,7 +46,7 @@ class SpMMSum:
         start = time.time()
         for _ in range(100):
             dglsp.spmm(self.dgl_A, self.input_feature)
-            torch.cuda.synchronize()
+        torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
 
@@ -57,7 +57,7 @@ class SpMMSum:
         start = time.time()
         for _ in range(100):
             spmm_sum(self.dcsr, self.input_feature, self.algorithm)
-            torch.cuda.synchronize()
+        torch.cuda.synchronize()
         end = time.time()
         dgsparse_time = end - start
 
