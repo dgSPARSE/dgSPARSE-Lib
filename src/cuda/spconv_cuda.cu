@@ -1,6 +1,3 @@
-#include "../../include/cuda/cuda_util.cuh"
-#include "../../include/cuda/spconv.cuh"
-#include "../../include/cuda/spconv_cuda.h"
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <cublas_v2.h>
@@ -10,15 +7,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <torch/extension.h>
+
 #include <tuple>
 #include <vector>
+
+#include "../../include/cuda/cuda_util.cuh"
+#include "../../include/cuda/spconv.cuh"
+#include "../../include/cuda/spconv_cuda.h"
 
 torch::Tensor spconv_fwd_fused(torch::Tensor in_feats, torch::Tensor kernel,
                                torch::Tensor kpos, torch::Tensor qkpos,
                                torch::Tensor in_map, torch::Tensor out_map,
                                int64_t out_nnz, int64_t sum_nnz,
                                bool separate_mid, bool arch80) {
-
   int in_nnz = in_feats.size(0);
   int in_channel = in_feats.size(1);
   if (in_feats.size(1) != kernel.size(1)) {
@@ -190,7 +191,6 @@ spconv_bwd_fused(torch::Tensor out_feats_grad, torch::Tensor in_feats,
                  torch::Tensor kernel, torch::Tensor kpos, torch::Tensor qkpos,
                  torch::Tensor in_map, torch::Tensor out_map, int64_t sum_nnz,
                  bool separate_mid, bool arch80) {
-
   int in_channel = in_feats.size(1);
   int in_nnz = in_feats.size(0);
 

@@ -1,5 +1,6 @@
-#include "../util/cuda_util.cuh"
 #include <cuda.h>
+
+#include "../util/cuda_util.cuh"
 
 __global__ void sddmm_coo_ebalance_vec4(int D_kcols, const int Size,
                                         int *S_cooRowInd, int *S_cooColInd,

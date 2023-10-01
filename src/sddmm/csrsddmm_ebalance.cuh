@@ -1,5 +1,6 @@
-#include "../util/cuda_util.cuh"
 #include <cuda.h>
+
+#include "../util/cuda_util.cuh"
 
 __global__ void sddmm_csr_ebalance_vec4(const int S_mrows, int D_kcols,
                                         const unsigned long Size,

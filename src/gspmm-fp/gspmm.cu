@@ -1,6 +1,7 @@
-#include "gspmm.h"
 #include <cuda.h>
 #include <cusparse.h>
+
+#include "gspmm.h"
 
 template <class REDUCE>
 __global__ void topoCacheCoarsenSPMMKernel(const long m, const long k,
@@ -440,7 +441,6 @@ void spmm_cuda(torch::Tensor rowptr, torch::Tensor colind, torch::Tensor data,
 
 torch::Tensor GSpMM_no_value_cuda(torch::Tensor rowptr, torch::Tensor colind,
                                   torch::Tensor node_feature, REDUCEOP reop) {
-
   auto ini = init(reop);
   const long m = rowptr.size(0) - 1;
   const long k = node_feature.size(1);

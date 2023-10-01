@@ -5,18 +5,20 @@
 //  author: guyue huang
 //  date  : 2021/06/29
 
-#include "mmio.hpp"
-#include <algorithm>
-#include <cassert>
-#include <cstdlib>            // std::rand()
 #include <cuda_runtime_api.h> // cudaEvent APIs
-#include <iostream>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cstdlib> // std::rand()
+#include <iostream>
 #include <tuple>
 #include <typeinfo>
 #include <vector>
+
+#include "mmio.hpp"
 
 #define CUDA_CHECK(func)                                                       \
   {                                                                            \

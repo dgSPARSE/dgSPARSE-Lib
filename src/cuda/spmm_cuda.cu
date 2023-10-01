@@ -1,13 +1,15 @@
+#include <c10/cuda/CUDAGuard.h>
+#include <torch/extension.h>
+
+#include <iostream>
+#include <tuple>
+#include <vector>
+
 #include "../../include/cuda/csr2csc.cuh"
 #include "../../include/cuda/cuda_util.cuh"
 #include "../../include/cuda/sddmm_cuda.cuh"
 #include "../../include/cuda/spmm_cuda.cuh"
 #include "../../include/gspmm.h"
-#include <c10/cuda/CUDAGuard.h>
-#include <iostream>
-#include <torch/extension.h>
-#include <tuple>
-#include <vector>
 
 std::vector<torch::Tensor>
 spmm_cuda(torch::Tensor csrptr, torch::Tensor indices, torch::Tensor edge_val,

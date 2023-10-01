@@ -1,5 +1,5 @@
 import torch
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Optional
 
 from dgsparse.storage import Storage
 
@@ -22,9 +22,10 @@ class SparseTensor(object):
         # self.is_symmetry = is_symmetry
 
     @classmethod
-    def from_torch_sparse_csr_tensor(
-        self, mat: torch.Tensor, has_value: bool = True, requires_grad: bool = False
-    ):
+    def from_torch_sparse_csr_tensor(self,
+                                     mat: torch.Tensor,
+                                     has_value: bool = True,
+                                     requires_grad: bool = False):
         if has_value:
             values = mat.values()
             if requires_grad:
@@ -42,11 +43,15 @@ class SparseTensor(object):
 
     # @classmethod
     # def from_edge_index(
-    #     self, edge_index: torch.Tensor, edge_attr: Optional[torch.Tensor] = None, has_value: bool = True
+    #     self, edge_index: torch.Tensor, edge_attr:
+    # Optional[torch.Tensor] = None, has_value: bool = True
     # ):
     #     return SparseTensor(
-    #         row=edge_index[0], rowptr=None, col=edge_index[1], values=edge_attr, has_value=has_value
+    #         row=edge_index[0], rowptr=None,
+    # col=edge_index[1], values=edge_attr, has_value=has_value
     #     )
 
-    # def csr(self) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
-    #     return self.storage.rowptr(), self.storage.col(), self.storage.value()
+    # def csr(self) -> Tuple[torch.Tensor, torch.Tensor,
+    # Optional[torch.Tensor]]:
+    #     return self.storage.rowptr(), self.storage.col(),
+    # self.storage.value()
