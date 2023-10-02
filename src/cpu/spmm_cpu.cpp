@@ -1,5 +1,6 @@
-#include "../../include/cpu/csr2csc.h"
 #include <iostream>
+
+#include "../../include/cpu/csr2csc.h"
 
 std::vector<torch::Tensor> csr2csc_cpu(int64_t rows, int64_t cols,
                                        torch::Tensor csrRowPtr,

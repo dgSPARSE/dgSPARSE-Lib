@@ -1,4 +1,3 @@
-import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,7 +7,7 @@ import time
 import dgl.sparse as dglsp
 from dgsparse.nn.gcnconv import GCN
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class GCNLayer(nn.Module):
@@ -17,12 +16,8 @@ class GCNLayer(nn.Module):
         self.W = nn.Linear(in_size, out_size)
 
     def forward(self, A, X):
-        ########################################################################
-        # (HIGHLIGHT) Compute the symmetrically normalized adjacency matrix with
-        # Sparse Matrix API
-        ########################################################################
-        I = dglsp.identity(A.shape, device=A.device)
-        A_hat = A + I
+        I_ = dglsp.identity(A.shape, device=A.device)
+        A_hat = A + I_
         D_hat = dglsp.diag(A_hat.sum(0))
         D_hat_invsqrt = D_hat**-0.5
         return D_hat_invsqrt @ A_hat @ D_hat_invsqrt @ self.W(X)
@@ -42,9 +37,9 @@ class GCN_dgl(nn.Module):
 
 
 def evaluate(g, pred):
-    label = g.ndata["label"].to(device)
-    val_mask = g.ndata["val_mask"].to(device)
-    test_mask = g.ndata["test_mask"].to(device)
+    label = g.ndata['label'].to(device)
+    val_mask = g.ndata['val_mask'].to(device)
+    test_mask = g.ndata['test_mask'].to(device)
 
     # Compute accuracy on validation/test set.
     val_acc = (pred[val_mask] == label[val_mask]).float().mean()
@@ -53,10 +48,12 @@ def evaluate(g, pred):
 
 
 def train(model, g):
-    features = g.ndata["feat"].to(device)
-    label = g.ndata["label"].to(device)
-    train_mask = g.ndata["train_mask"].to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=5e-4)
+    features = g.ndata['feat'].to(device)
+    label = g.ndata['label'].to(device)
+    train_mask = g.ndata['train_mask'].to(device)
+    optimizer = torch.optim.Adam(model.parameters(),
+                                 lr=1e-2,
+                                 weight_decay=5e-4)
     loss_fcn = nn.CrossEntropyLoss()
 
     # Preprocess to get the adjacency matrix of the graph.
@@ -84,10 +81,8 @@ def train(model, g):
         # Evaluate the prediction.
         val_acc, test_acc = evaluate(g, pred)
         if epoch % 5 == 0:
-            print(
-                f"In epoch {epoch}, loss: {loss:.3f}, val acc: {val_acc:.3f}"
-                f", test acc: {test_acc:.3f}"
-            )
+            print(f'In epoch {epoch}, loss: {loss:.3f}, val acc: {val_acc:.3f}'
+                  f', test acc: {test_acc:.3f}')
 
 
 # Load graph from the existing dataset.
@@ -95,7 +90,7 @@ dataset = dgl.data.CoraGraphDataset()
 g = dataset[0]
 
 # Create model.s
-feature = g.ndata["feat"]
+feature = g.ndata['feat']
 in_size = feature.shape[1]
 out_size = dataset.num_classes
 gcn_model = GCN_dgl(in_size, out_size, 16)
@@ -107,12 +102,12 @@ dg_gcn_model = dg_gcn_model.to(device)
 start = time.time()
 train(gcn_model, g)
 end = time.time()
-print(f"dgl time is: {end - start}")
+print(f'dgl time is: {end - start}')
 
 start = time.time()
 train(dg_gcn_model, g)
 end = time.time()
-print(f"dgsparse time is: {end - start}")
+print(f'dgsparse time is: {end - start}')
 
 # features = g.ndata["feat"]
 # label = g.ndata["label"]

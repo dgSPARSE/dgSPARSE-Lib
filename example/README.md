@@ -63,19 +63,24 @@ Ignore original values and use randomly generated values.
 ## Steps to run a gspmm-fp example
 
 Make sure you have installed the requirements as follows:
-* torch >= 1.8.0
-* ninja
-* scipy
+
+- torch >= 1.8.0
+- ninja
+- scipy
 
 **Step**
 Enter the example's folder:
-``` bash
+
+```bash
 cd gspmm-fp
 ```
+
 Then you could run our example by
-``` python
+
+```python
 python gspmm-exp.py [k]
 ```
+
 Here k is the feature length of the input dense matrix.
 
 Example output (on RTX3090, cuda v11.2)

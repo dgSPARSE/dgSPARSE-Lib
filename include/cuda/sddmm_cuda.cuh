@@ -1,13 +1,14 @@
 #ifndef SDDMM_CUDA
 #define SDDMM_CUDA
 
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
+
 #include "../gspmm.h"
 #include "cuda_util.cuh"
 #include "device_atomic_functions.h"
 #include "device_launch_parameters.h"
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cuda_runtime_api.h>
 
 __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
                                int *S_cooRowInd, int *S_cooColInd,

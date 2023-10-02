@@ -23,7 +23,6 @@ __global__ void spmm_csr_scalar_row_kernel(
   float res = 0, val;
   int col;
   for (; row < nr; row += stride) {
-
     int start = __ldg(rowPtr + row);
     int end = __ldg(rowPtr + row + 1);
     for (int p = start; p < end; p++) {
@@ -113,7 +112,6 @@ __global__ void spmm_coo_scalar_row_kernel(
   dnOutput += lane_id;
 
   if (tid < nnz) {
-
     int row = __ldg(rowIdx + tid);
     int col = __ldg(colIdx + tid);
     float val = __guard_load_default_one<float>(values, tid) *
@@ -121,7 +119,6 @@ __global__ void spmm_coo_scalar_row_kernel(
     int curr_row = row;
 
     for (int ii = 1; ii < NE_PER_THREAD && ++tid < nnz; ii++) {
-
       row = __ldg(rowIdx + tid);
       col = __ldg(colIdx + tid);
 
@@ -170,7 +167,6 @@ __global__ void spmm_coo_vector_row_kernel(
     float res[numberOfElements];
 
     if (tid < nnz) {
-
       row = __ldg(rowIdx + tid);
       col = __ldg(colIdx + tid);
       val = __guard_load_default_one(values, tid);
@@ -320,7 +316,6 @@ __global__ void spmm_coo_scalar_col_kernel(
   int offset_Y = blockIdx.y * CF * nr;
 
   if (tid < nnz) {
-
     int row = __ldg(rowIdx + tid);
     int col = __ldg(colIdx + tid);
     float val = __guard_load_default_one(values, tid);
@@ -331,7 +326,6 @@ __global__ void spmm_coo_scalar_col_kernel(
     int curr_row = row;
 
     for (int ii = 1; ii < NE_PER_THREAD && ++tid < nnz; ii++) {
-
       row = __ldg(rowIdx + tid);
       col = __ldg(colIdx + tid);
 
@@ -380,7 +374,6 @@ __global__ void spmm_coo_vector_col_kernel(
   const float *offset_X_addr = X + (blockIdx.y * CF * nc);
   int offset_Y = blockIdx.y * CF * nr;
   for (; tid < nnz + lane_id; tid += stride) {
-
     if (tid < nnz) {
       row = __ldg(rowIdx + tid);
       col = __ldg(colIdx + tid);
@@ -470,7 +463,6 @@ __global__ void spmv_coo_scalar_kernel(
   tid *= NE_PER_THREAD;
 
   if (tid < nnz) {
-
     int row = __ldg(rowIdx + tid);
     int col = __ldg(colIdx + tid);
     float val =
@@ -478,7 +470,6 @@ __global__ void spmv_coo_scalar_kernel(
     int curr_row = row;
 
     for (int ii = 1; ii < NE_PER_THREAD && ++tid < nnz; ii++) {
-
       row = __ldg(rowIdx + tid);
       col = __ldg(colIdx + tid);
 
@@ -563,7 +554,6 @@ __global__ void spmv_coo_vector_kernel(
     float res[numberOfElements] = {0};
 
     if (tid < nnz) {
-
       row = __ldg(rowIdx + tid);
       col = __ldg(colIdx + tid);
       val = __guard_load_default_one<float>(values, tid);
@@ -602,7 +592,6 @@ __global__ void spmv_coo_vector_kernel(
         SEG_SHFL_SCAN(res[kk], tmpv, row, tmpr);
       }
       if (is_seg_start) {
-
 #pragma unroll
         for (int kk = 0; kk < numberOfElements; kk++)
           atomicAdd(&dnOutput[row * nv + kk], res[kk]);
@@ -620,7 +609,6 @@ void cuda_csr_coo_spmm(SPMV_SPMM_ALG kAlg, DenseLayout layout, const int nr,
                        const float *values, const float *dnInput,
                        float *dnOutput) {
   if (layout == DENSE_ROW_MAJOR) {
-
     if (kAlg == ALG_COO_SCALAR || kAlg == ALG_CSR_SCALAR) {
       int blockDimX = nv;
       int blockDimY = kBlockSize / blockDimX;
@@ -691,7 +679,6 @@ void cuda_csr_coo_spmm(SPMV_SPMM_ALG kAlg, DenseLayout layout, const int nr,
                                                     dnInput, dnOutput);
       }
     } else if (kAlg == ALG_COO_VECTOR || kAlg == ALG_CSR_VECTOR) {
-
       int blockDimX = kWarpSize;
       int blockDimY = kBlockSize / kWarpSize;
       int numberOfElemLoad = nv > 4 ? 4 : nv;
@@ -773,7 +760,6 @@ void cuda_csr_coo_spmm(SPMV_SPMM_ALG kAlg, DenseLayout layout, const int nr,
                   dnOutput);
       }
     } else if (kAlg == ALG_COO_VECTOR || kAlg == ALG_CSR_VECTOR) {
-
       int blockDimX = kWarpSize;
       int blockDimY = kBlockSize / kWarpSize;
       int numberOfElemLoad = 1;

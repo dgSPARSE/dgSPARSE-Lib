@@ -1,13 +1,15 @@
-#include "../../src/sddmm/sddmm.h"
-#include "../util/sp_util.hpp" // read_mtx
+#include <cuda_runtime_api.h>
+#include <cusparse.h>
+
 #include <algorithm>
 #include <cmath>
 #include <ctime>
-#include <cuda_runtime_api.h>
-#include <cusparse.h>
 #include <fstream>
 #include <iostream>
 #include <string>
+
+#include "../../src/sddmm/sddmm.h"
+#include "../util/sp_util.hpp" // read_mtx
 #define VALIDATE
 
 /* This example need CUDA Version >=11.3 */
@@ -26,12 +28,12 @@ int main(int argc, char *argv[]) {
   // Load sparse matrix
   //
 
-  int M;                              // number of S-rows
-  int N;                              // number of S-columns
-  int nnz;                            // number of non-zeros in S
-  std::vector<int> csr_indptr_buffer; // buffer for indptr array in CSR format
-  std::vector<int>
-      csr_indices_buffer; // buffer for indices (column-ids) array in CSR format
+  int M;                               // number of S-rows
+  int N;                               // number of S-columns
+  int nnz;                             // number of non-zeros in S
+  std::vector<int> csr_indptr_buffer;  // buffer for indptr array in CSR format
+  std::vector<int> csr_indices_buffer; // buffer for indices (column-ids) array
+                                       // in CSR format
   // load sparse matrix from mtx file
   read_mtx_file(argv[1], M, N, nnz, csr_indptr_buffer, csr_indices_buffer);
   printf("Finish reading matrix %d rows, %d columns, %d nnz. \nIgnore original "

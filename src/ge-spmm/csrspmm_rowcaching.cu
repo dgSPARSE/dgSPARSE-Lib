@@ -162,62 +162,61 @@ __global__ void csrspmm_rowcaching_nnzbalance_kernel(
     goto Ndim_Residue;
 
   for (; nz_start < nnz; nz_start += stride) {
-  // iterate over the segment of this warp
-  for (int tile_base = nz_start;
-    tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
+    // iterate over the segment of this warp
+    for (int tile_base = nz_start;
+         tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
+      int thread_nz_id = tile_base + lane_id;
+      if (thread_nz_id < nnz) {
+        workspace_colid[lane_id] = csr_indices[thread_nz_id];
+        workspace_data[lane_id] =
+            __guard_load_default_one<float>(csr_data, thread_nz_id);
+      } else {
+        workspace_colid[lane_id] = 0;
+        workspace_data[lane_id] = 0.0f;
+      }
+      workspace_rowid[lane_id] =
+          binary_search_segment_number<int>(csr_indptr, M, nnz, thread_nz_id);
+      __syncwarp();
 
-    int thread_nz_id = tile_base + lane_id;
-    if (thread_nz_id < nnz) {
-      workspace_colid[lane_id] = csr_indices[thread_nz_id];
-      workspace_data[lane_id] =
-          __guard_load_default_one<float>(csr_data, thread_nz_id);
-    } else {
-      workspace_colid[lane_id] = 0;
-      workspace_data[lane_id] = 0.0f;
-    }
-    workspace_rowid[lane_id] =
-        binary_search_segment_number<int>(csr_indptr, M, nnz, thread_nz_id);
-    __syncwarp();
-
-    // initialize with first value
-    int k = workspace_colid[0];
-    float v = workspace_data[0];
+      // initialize with first value
+      int k = workspace_colid[0];
+      float v = workspace_data[0];
 #pragma unroll
-    for (int i = 0; i < CoarsenFactor; i++) {
-      c[i] = v * B_lanes[i][k * ldB];
-    }
-    int row_curr = workspace_rowid[0], next_row;
+      for (int i = 0; i < CoarsenFactor; i++) {
+        c[i] = v * B_lanes[i][k * ldB];
+      }
+      int row_curr = workspace_rowid[0], next_row;
 
 // scan
 #pragma unroll
-    for (int pp = 1; pp < 32; pp++) {
-      next_row = workspace_rowid[pp];
-      if (next_row != row_curr) {
+      for (int pp = 1; pp < 32; pp++) {
+        next_row = workspace_rowid[pp];
+        if (next_row != row_curr) {
 #pragma unroll
-        for (int i = 0; i < CoarsenFactor; i++) {
-          atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
-        }
-        row_curr = next_row;
-        k = workspace_colid[pp];
-        v = workspace_data[pp];
+          for (int i = 0; i < CoarsenFactor; i++) {
+            atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
+          }
+          row_curr = next_row;
+          k = workspace_colid[pp];
+          v = workspace_data[pp];
 #pragma unroll
-        for (int i = 0; i < CoarsenFactor; i++) {
-          c[i] = v * B_lanes[i][k * ldB];
-        }
-      } else {
-        k = workspace_colid[pp];
-        v = workspace_data[pp];
+          for (int i = 0; i < CoarsenFactor; i++) {
+            c[i] = v * B_lanes[i][k * ldB];
+          }
+        } else {
+          k = workspace_colid[pp];
+          v = workspace_data[pp];
 #pragma unroll
-        for (int i = 0; i < CoarsenFactor; i++) {
-          c[i] = c[i] + v * B_lanes[i][k * ldB];
+          for (int i = 0; i < CoarsenFactor; i++) {
+            c[i] = c[i] + v * B_lanes[i][k * ldB];
+          }
         }
       }
-    }
 #pragma unroll
-    for (int i = 0; i < CoarsenFactor; i++) {
-      atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
+      for (int i = 0; i < CoarsenFactor; i++) {
+        atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
+      }
     }
-  }
   }
   return;
 
@@ -226,72 +225,71 @@ Ndim_Residue:
   int valid_lane_num = CEIL(N - col_offset - lane_id, 32);
 
   for (; nz_start < nnz; nz_start += stride) {
-  // iterate over the segment of this warp
-  for (int tile_base = nz_start;
-    tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
-
-    int thread_nz_id = tile_base + lane_id;
-    if (thread_nz_id < nnz) {
-      workspace_colid[lane_id] = csr_indices[thread_nz_id];
-      workspace_data[lane_id] =
-          __guard_load_default_one<float>(csr_data, thread_nz_id);
-    } else {
-      workspace_colid[lane_id] = 0;
-      workspace_data[lane_id] = 0.0f;
-    }
-    workspace_rowid[lane_id] =
-        binary_search_segment_number<int>(csr_indptr, M, nnz, thread_nz_id);
-    __syncwarp();
-
-    // initialize with first value
-    int k = workspace_colid[0];
-    float v = workspace_data[0];
-#pragma unroll
-    for (int i = 0; i < CoarsenFactor; i++) {
-      if (i < valid_lane_num) {
-        c[i] = v * B_lanes[i][k * ldB];
+    // iterate over the segment of this warp
+    for (int tile_base = nz_start;
+         tile_base < min(nz_start + ThreadNz * 32, nnz); tile_base += 32) {
+      int thread_nz_id = tile_base + lane_id;
+      if (thread_nz_id < nnz) {
+        workspace_colid[lane_id] = csr_indices[thread_nz_id];
+        workspace_data[lane_id] =
+            __guard_load_default_one<float>(csr_data, thread_nz_id);
+      } else {
+        workspace_colid[lane_id] = 0;
+        workspace_data[lane_id] = 0.0f;
       }
-    }
-    int row_curr = workspace_rowid[0], next_row;
+      workspace_rowid[lane_id] =
+          binary_search_segment_number<int>(csr_indptr, M, nnz, thread_nz_id);
+      __syncwarp();
+
+      // initialize with first value
+      int k = workspace_colid[0];
+      float v = workspace_data[0];
+#pragma unroll
+      for (int i = 0; i < CoarsenFactor; i++) {
+        if (i < valid_lane_num) {
+          c[i] = v * B_lanes[i][k * ldB];
+        }
+      }
+      int row_curr = workspace_rowid[0], next_row;
 
 // scan
 #pragma unroll
-    for (int pp = 1; pp < 32; pp++) {
-      next_row = workspace_rowid[pp];
-      if (next_row != row_curr) {
+      for (int pp = 1; pp < 32; pp++) {
+        next_row = workspace_rowid[pp];
+        if (next_row != row_curr) {
 #pragma unroll
-        for (int i = 0; i < CoarsenFactor; i++) {
-          if (i < valid_lane_num) {
-            atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
+          for (int i = 0; i < CoarsenFactor; i++) {
+            if (i < valid_lane_num) {
+              atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
+            }
           }
-        }
-        row_curr = next_row;
-        k = workspace_colid[pp];
-        v = workspace_data[pp];
+          row_curr = next_row;
+          k = workspace_colid[pp];
+          v = workspace_data[pp];
 #pragma unroll
-        for (int i = 0; i < CoarsenFactor; i++) {
-          if (i < valid_lane_num) {
-            c[i] = v * B_lanes[i][k * ldB];
+          for (int i = 0; i < CoarsenFactor; i++) {
+            if (i < valid_lane_num) {
+              c[i] = v * B_lanes[i][k * ldB];
+            }
           }
-        }
-      } else {
-        k = workspace_colid[pp];
-        v = workspace_data[pp];
+        } else {
+          k = workspace_colid[pp];
+          v = workspace_data[pp];
 #pragma unroll
-        for (int i = 0; i < CoarsenFactor; i++) {
-          if (i < valid_lane_num) {
-            c[i] = c[i] + v * B_lanes[i][k * ldB];
+          for (int i = 0; i < CoarsenFactor; i++) {
+            if (i < valid_lane_num) {
+              c[i] = c[i] + v * B_lanes[i][k * ldB];
+            }
           }
         }
       }
-    }
 #pragma unroll
-    for (int i = 0; i < CoarsenFactor; i++) {
-      if (i < valid_lane_num) {
-        atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
+      for (int i = 0; i < CoarsenFactor; i++) {
+        if (i < valid_lane_num) {
+          atomicAdd(C_lanes[i] + row_curr * ldC, c[i]);
+        }
       }
     }
-  }
   }
 }
 
@@ -332,8 +330,8 @@ void csrspmm_rowcaching_nnzbalance(const SpMatCsrDescr_t spmatA, const float *B,
   // thread_nz );
   int Nnzdim_threadblock = CEIL(
       spmatA.nrow,
-      Nnzdim_warp_per_tb *
-          thread_nz); // CEIL(spmatA.nnz, Nnzdim_warp_per_tb * 32 * thread_nz );
+      Nnzdim_warp_per_tb * thread_nz); // CEIL(spmatA.nnz, Nnzdim_warp_per_tb *
+                                       // 32 * thread_nz );
 
   dim3 gridDim(Nnzdim_threadblock, Ndim_threadblock, 1);
   dim3 blockDim(RefThreadPerBlock, 1, 1);

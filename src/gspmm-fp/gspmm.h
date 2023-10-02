@@ -1,14 +1,16 @@
 #ifndef GSPMM
 #define GSPMM
 
-#include "device_launch_parameters.h"
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
-#include <iostream>
 #include <pybind11/pybind11.h>
 #include <torch/extension.h>
 #include <torch/types.h>
+
+#include <iostream>
 #include <vector>
+
+#include "device_launch_parameters.h"
 
 enum REDUCEOP { SUM, MAX, MIN, MEAN };
 enum COMPUTEOP { ADD, SUB, MUL, DIV };

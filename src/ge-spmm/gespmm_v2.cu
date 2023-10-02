@@ -1,6 +1,7 @@
+#include <stdio.h>
+
 #include "../util/cuda_util.cuh"
 #include "gespmm_v2.h"
-#include <stdio.h>
 #define NT 256
 
 __global__ void csrSpmvRowVector(int nr, int nc, int nnz, const int *csrRowPtr,
@@ -737,9 +738,9 @@ void cuda_csr_spmm(int algo_code, int layout_code, int nr, int nc, int nv,
     //     case 1: csrSpmvMrgScalar<<<DIV_UP(nr, NT), NT>>>(nr, nc, nnz,
     //     _csrRowPtr, _csrCol, _csrVal, _vin, _vout); break; case 2: switch
     //     (layout_code) {
-    //             case 0: csrSpmmvMrgScalar<2> <<<DIV_UP(nr, NT), NT>>>(nr, nc,
-    //             2, nnz, _csrRowPtr, _csrCol, _csrVal, _vin, _vout); break;
-    //             case 1: csrSpmmMrgScalar<2,1> <<<DIV_UP(nr, (NT/2)),
+    //             case 0: csrSpmmvMrgScalar<2> <<<DIV_UP(nr, NT), NT>>>(nr,
+    //             nc, 2, nnz, _csrRowPtr, _csrCol, _csrVal, _vin, _vout);
+    //             break; case 1: csrSpmmMrgScalar<2,1> <<<DIV_UP(nr, (NT/2)),
     //             NT>>>(nr, nc, 2, nnz, _csrRowPtr, _csrCol, _csrVal, _vin,
     //             _vout); break; default: printf("wrong layout code %d\n",
     //             layout_code); return;
@@ -749,8 +750,8 @@ void cuda_csr_spmm(int algo_code, int layout_code, int nr, int nc, int nv,
     //             NT),(nv/2),1), NT>>>(nr, nc, nv, nnz, _csrRowPtr, _csrCol,
     //             _csrVal, _vin, _vout); break; case 1: csrSpmmMrgScalar<4,2>
     //             <<<DIV_UP(nr, (NT/nv)), NT>>>(nr, nc, nv, nnz, _csrRowPtr,
-    //             _csrCol, _csrVal, _vin, _vout); break; default: printf("wrong
-    //             layout code %d\n", layout_code); return;
+    //             _csrCol, _csrVal, _vin, _vout); break; default:
+    //             printf("wrong layout code %d\n", layout_code); return;
     //         } break;
     //     default: printf("wrong nv %d\n", nv); return;
     // } break;

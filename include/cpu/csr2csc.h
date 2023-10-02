@@ -1,7 +1,7 @@
 #ifndef CSR2CSC_H
 #define CSR2CSC_H
 #include "cpu_util.h"
-#include <mkl_spblas.h>
+// #include <mkl_spblas.h>
 #include <torch/torch.h>
 
 std::tuple<torch::Tensor, torch::Tensor> csr2csr(int64_t rows, int64_t cols,

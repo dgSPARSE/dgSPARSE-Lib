@@ -5,17 +5,18 @@
 //  date  : 2021/10/13
 // compile: nvcc version >=11.0
 
-#include "../../src/ge-spmm/gespmm.h" // gespmmCsrSpMM()
-#include "../util/sp_util.hpp"        // read_mtx
-#include <cstdlib>                    // std::rand(), RAND_MAX
-#include <cuda_runtime_api.h>         // cudaMalloc, cudaMemcpy, etc.
-#include <cusparse.h> // cusparseSpMM (>= v11.0) or cusparseScsrmm
+#include <cuda_runtime_api.h> // cudaMalloc, cudaMemcpy, etc.
+#include <cusparse.h>         // cusparseSpMM (>= v11.0) or cusparseScsrmm
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <cstdlib> // std::rand(), RAND_MAX
 #include <vector>
 
-int main(int argc, const char **argv) {
+#include "../../src/ge-spmm/gespmm.h" // gespmmCsrSpMM()
+#include "../util/sp_util.hpp"        // read_mtx
 
+int main(int argc, const char **argv) {
   /// check command-line argument
 
   if (argc < 2) {
@@ -28,12 +29,12 @@ int main(int argc, const char **argv) {
   // Load sparse matrix
   //
 
-  int M;                              // number of A-rows
-  int K;                              // number of A-columns
-  int nnz;                            // number of non-zeros in A
-  std::vector<int> csr_indptr_buffer; // buffer for indptr array in CSR format
-  std::vector<int>
-      csr_indices_buffer; // buffer for indices (column-ids) array in CSR format
+  int M;                               // number of A-rows
+  int K;                               // number of A-columns
+  int nnz;                             // number of non-zeros in A
+  std::vector<int> csr_indptr_buffer;  // buffer for indptr array in CSR format
+  std::vector<int> csr_indices_buffer; // buffer for indices (column-ids) array
+                                       // in CSR format
   // load sparse matrix from mtx file
   read_mtx_file(argv[1], M, K, nnz, csr_indptr_buffer, csr_indices_buffer);
   printf("Finish reading matrix %d rows, %d columns, %d nnz. \nIgnore original "
@@ -140,7 +141,6 @@ int main(int argc, const char **argv) {
   //
 
   if (correct) {
-
     GpuTimer gpu_timer;
     int warmup_iter = 10;
     int repeat_iter = 100;
@@ -175,7 +175,6 @@ int main(int argc, const char **argv) {
       GESPMM_ALG_ROWCACHING_ROWBALANCE, GESPMM_ALG_ROWCACHING_NNZBALANCE};
 
   for (auto alg : algs) {
-
     //
     // Run GE-SpMM and check result
     //
@@ -195,7 +194,6 @@ int main(int argc, const char **argv) {
     bool correct = check_result<float>(M, N, C_h, C_ref);
 
     if (correct) {
-
       // benchmark GE-SpMM performance
 
       GpuTimer gpu_timer;

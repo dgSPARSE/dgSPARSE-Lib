@@ -1,3 +1,3 @@
 #!/bin/bash
 
-$PYTHON -m pip install . --no-deps
+FORCE_CUDA=1 $PYTHON -m pip install . --no-deps

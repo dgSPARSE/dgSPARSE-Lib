@@ -1,10 +1,11 @@
 #ifndef SPMM_CUDA
 #define SPMM_CUDA
 
-#include "../gspmm.h"
-#include "cuda_util.cuh"
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+
+#include "../gspmm.h"
+#include "cuda_util.cuh"
 
 template <typename Index, typename DType, typename REDUCE, typename COMPUTE>
 __global__ void

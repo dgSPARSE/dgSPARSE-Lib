@@ -1,8 +1,9 @@
 #ifndef CSR2CSC_H
 #define CSR2CSC_H
 
-#include "cuda_util.cuh"
 #include <cusparse.h>
+
+#include "cuda_util.cuh"
 
 void csr2cscKernel(int m, int n, int nnz, int devid, int *csrRowPtr,
                    int *csrColInd, float *csrVal, int *cscColPtr,
