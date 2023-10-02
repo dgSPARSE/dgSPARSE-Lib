@@ -11,7 +11,7 @@ from utils import GraphDataset
 
 
 class SpMMSum:
-    def __init__(self, data, device, algorithm) -> None:
+    def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr
         self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
@@ -22,30 +22,37 @@ class SpMMSum:
 
         self.device = device
         self.algorithm = algorithm
-        self.input_feature = data.features
-        # self.input_feature =
-        # torch.randn((self.dcsr.storage.sparse_sizes[1], 1)).to(device)
+        # self.input_feature = data.features
+        self.input_feature = torch.rand((data.num_nodes, in_dim),
+                                        device=device)
+        # self.input_feature = torch.randn((self.dcsr.storage.sparse_sizes[1], 1)).to(device)
         # print(self.input_feature.size())
 
     def forward_check(self):
         # warm up
-        for _ in range(10):
-            matmul(self.adj_t, self.input_feature, reduce='sum')
+        for i in range(10):
+            # out = matmul(self.adj_t, self.input_feature, reduce="sum")
+            # out = torch_sparse.matmul.spmm_sum(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='sum')
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            matmul(self.adj_t, self.input_feature, reduce='sum')
+        for i in range(100):
+            # out = matmul(self.adj_t, self.input_feature, reduce="sum")
+            # out = torch_sparse.matmul.spmm_sum(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='sum')
         torch.cuda.synchronize()
         end = time.time()
         torch_sparse_time = end - start
 
         # warm up
-        for _ in range(10):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(10):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "sum", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_sum(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(100):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "sum", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_sum(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
@@ -95,7 +102,7 @@ class SpMMSum:
 
 
 class SpMMMax:
-    def __init__(self, data, device, algorithm) -> None:
+    def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr
 
@@ -107,27 +114,35 @@ class SpMMMax:
 
         self.device = device
         self.algorithm = algorithm
-        self.input_feature = data.features
+        # self.input_feature = data.features
+        self.input_feature = torch.rand((data.num_nodes, in_dim),
+                                        device=device)
 
     def forward_check(self):
         # warm up
-        for _ in range(10):
-            matmul(self.adj_t, self.input_feature, reduce='max')
+        for i in range(10):
+            # out_check = matmul(self.adj_t, self.input_feature, reduce="max")
+            # out = torch_sparse.spmm_max(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='max')
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            matmul(self.adj_t, self.input_feature, reduce='max')
+        for i in range(100):
+            # out_check = matmul(self.adj_t, self.input_feature, reduce="max")
+            # out = torch_sparse.spmm_max(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='max')
         torch.cuda.synchronize()
         end = time.time()
         torch_sparse_time = end - start
 
         # warm up
-        for _ in range(10):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(10):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "max", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_max(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(100):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "max", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_max(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
@@ -150,7 +165,7 @@ class SpMMMax:
 
 
 class SpMMMin:
-    def __init__(self, data, device, algorithm) -> None:
+    def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr
 
@@ -162,27 +177,35 @@ class SpMMMin:
 
         self.device = device
         self.algorithm = algorithm
-        self.input_feature = data.features
+        # self.input_feature = data.features
+        self.input_feature = torch.rand((data.num_nodes, in_dim),
+                                        device=device)
 
     def forward_check(self):
         # warm up
-        for _ in range(10):
-            matmul(self.adj_t, self.input_feature, reduce='min')
+        for i in range(10):
+            # out_check = matmul(self.adj_t, self.input_feature, reduce="min")
+            # out = torch_sparse.spmm_min(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='min')
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            matmul(self.adj_t, self.input_feature, reduce='min')
+        for i in range(100):
+            # out_check = matmul(self.adj_t, self.input_feature, reduce="min")
+            # out = torch_sparse.spmm_min(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='min')
         torch.cuda.synchronize()
         end = time.time()
         torch_sparse_time = end - start
 
         # warm up
-        for _ in range(10):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(10):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "min", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_min(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(100):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "min", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_min(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
@@ -205,7 +228,7 @@ class SpMMMin:
 
 
 class SpMMMean:
-    def __init__(self, data, device, algorithm) -> None:
+    def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr
 
@@ -217,27 +240,35 @@ class SpMMMean:
 
         self.device = device
         self.algorithm = algorithm
-        self.input_feature = data.features
+        # self.input_feature = data.features
+        self.input_feature = torch.rand((data.num_nodes, in_dim),
+                                        device=device)
 
     def forward_check(self):
         # warm up
-        for _ in range(10):
-            matmul(self.adj_t, self.input_feature, reduce='mean')
+        for i in range(10):
+            # out_check = matmul(self.adj_t, self.input_feature, reduce="mean")
+            # out = torch_sparse.spmm_mean(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='mean')
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            matmul(self.adj_t, self.input_feature, reduce='mean')
+        for i in range(100):
+            # out_check = matmul(self.adj_t, self.input_feature, reduce="mean")
+            # out = torch_sparse.spmm_mean(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='mean')
         torch.cuda.synchronize()
         end = time.time()
         torch_sparse_time = end - start
 
         # warm up
-        for _ in range(10):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(10):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "mean", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_mean(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         start = time.time()
-        for _ in range(100):
-            dglsp.spmm(self.dgl_A, self.input_feature)
+        for i in range(100):
+            # out = dgl.ops.gspmm(self.dgl_graph, "mul", "mean", self.input_feature, self.dgl_graph.adj().val)
+            out = dgl.ops.copy_u_mean(self.dgl_graph, self.input_feature)
         torch.cuda.synchronize()
         end = time.time()
         dgl_time = end - start
@@ -278,18 +309,20 @@ def check_time(gc, direction='forward'):
     print(f'dgsparse forward time is: {dgsparse_time_list}')
 
 
-def test_spmm_time(dataset, device, reduce='sum'):
+def test_spmm_time(dataset, in_dim, device, reduce='sum'):
     print()
-    print(f'start testing {dataset} dataset, reduce is: {reduce}')
+    print(
+        f'start testing {dataset} dataset, reduce is: {reduce}, in_dim is: {in_dim}'
+    )
     data = GraphDataset(dataset, device)
     if reduce == 'sum':
-        gc = SpMMSum(data, device, 0)
+        gc = SpMMSum(data, in_dim, device, 0)
     elif reduce == 'max':
-        gc = SpMMMax(data, device, 0)
+        gc = SpMMMax(data, in_dim, device, 0)
     elif reduce == 'min':
-        gc = SpMMMin(data, device, 0)
+        gc = SpMMMin(data, in_dim, device, 0)
     elif reduce == 'mean':
-        gc = SpMMMean(data, device, 0)
+        gc = SpMMMean(data, in_dim, device, 0)
     else:
         raise ValueError
     check_time(gc, direction='forward')
@@ -297,11 +330,13 @@ def test_spmm_time(dataset, device, reduce='sum'):
 
 
 if __name__ == '__main__':
-    # datasets = ["cora", "citeseer", "pubmed", "ppi"]
-    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    # datasets = ["cora"]
+    device = 'cuda:7' if torch.cuda.is_available() else 'cpu'
     datasets = ['cora', 'citeseer', 'pubmed', 'ppi', 'reddit']
+    features_dim = [32, 64, 128]
     for dataset in datasets:
-        test_spmm_time(dataset, device, reduce='sum')
-        test_spmm_time(dataset, device, reduce='max')
-        test_spmm_time(dataset, device, reduce='min')
-        test_spmm_time(dataset, device, reduce='mean')
+        for in_dim in features_dim:
+            test_spmm_time(dataset, in_dim, device, reduce='sum')
+            test_spmm_time(dataset, in_dim, device, reduce='max')
+            test_spmm_time(dataset, in_dim, device, reduce='min')
+            test_spmm_time(dataset, in_dim, device, reduce='mean')
