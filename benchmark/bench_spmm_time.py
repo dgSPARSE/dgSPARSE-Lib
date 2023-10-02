@@ -10,6 +10,7 @@ from utils import GraphDataset
 
 
 class SpMMSum:
+
     def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr
@@ -98,6 +99,7 @@ class SpMMSum:
 
 
 class SpMMMax:
+
     def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr
@@ -159,6 +161,7 @@ class SpMMMax:
 
 
 class SpMMMin:
+
     def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr
@@ -220,6 +223,7 @@ class SpMMMin:
 
 
 class SpMMMean:
+
     def __init__(self, data, in_dim, device, algorithm) -> None:
         # prepare for torch and dgsparse
         self.tcsr = data.tcsr

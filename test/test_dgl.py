@@ -11,6 +11,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class GCNLayer(nn.Module):
+
     def __init__(self, in_size, out_size):
         super(GCNLayer, self).__init__()
         self.W = nn.Linear(in_size, out_size)
@@ -25,6 +26,7 @@ class GCNLayer(nn.Module):
 
 # Create a GCN with the GCN layer.
 class GCN_dgl(nn.Module):
+
     def __init__(self, in_size, out_size, hidden_size):
         super(GCN, self).__init__()
         self.conv1 = GCNLayer(in_size, hidden_size)

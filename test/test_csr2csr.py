@@ -6,6 +6,7 @@ from scipy.io import mmread
 
 
 class Csr2Csc:
+
     def __init__(self, path, device):
         sparsecsr = mmread(path).astype('float32').tocsr()
         self.device = device

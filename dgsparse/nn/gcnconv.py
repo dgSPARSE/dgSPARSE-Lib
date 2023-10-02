@@ -9,6 +9,7 @@ from dgsparse import spmm_sum, SparseTensor
 
 
 class GCNConv(nn.Module):
+
     def __init__(self, in_size, out_size):
         super().__init__()
         self.W = nn.Linear(in_size, out_size, bias=False)
@@ -20,6 +21,7 @@ class GCNConv(nn.Module):
 
 
 class GCN(nn.Module):
+
     def __init__(self, in_size, out_size, hidden_size):
         super().__init__()
         self.conv1 = GCNConv(in_size, hidden_size)

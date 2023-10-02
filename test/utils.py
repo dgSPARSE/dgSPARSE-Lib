@@ -6,6 +6,7 @@ import torch_sparse
 
 
 class GraphDataset:
+
     def __init__(self, name: str, device):
         self.name = name
         self.device = device

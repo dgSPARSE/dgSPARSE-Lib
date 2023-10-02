@@ -7,6 +7,7 @@ from dgsparse import spmm_sum, spmm_max, spmm_mean, SparseTensor
 
 
 class GINConv(nn.Module):
+
     def __init__(
         self,
         apply_func=None,
@@ -70,6 +71,7 @@ class GINConv(nn.Module):
 
 
 class GIN(nn.Module):
+
     def __init__(
         self,
         in_size,
