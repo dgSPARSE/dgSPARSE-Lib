@@ -8,6 +8,7 @@ import dgl
 
 
 class GraphDataset:
+
     def __init__(self, name: str, device):
         self.name = name
         self.device = device
