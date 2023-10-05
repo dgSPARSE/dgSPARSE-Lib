@@ -93,11 +93,11 @@ test_requires = [
     'pytest-cov',
 ]
 
-
 setup(
     name='dgsparse-lib',
     version=__version__,
-    description=(' PyTorch-Based Fast and Efficient Processing for Various Machine Learning Applications with Diverse Sparsity'),
+    description=(' PyTorch-Based Fast and Efficient Processing \
+      for Various Machine Learning Applications with Diverse Sparsity'),
     author='dgsparse team',
     author_email='team@dgsparse.org',
     url=URL,
