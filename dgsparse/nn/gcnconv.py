@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 import torch_sparse
@@ -8,11 +7,11 @@ from torch_sparse import sum as sparsesum
 from dgsparse import spmm_sum, SparseTensor
 
 
-class GCNConv(nn.Module):
+class GCNConv(torch.nn.Module):
 
     def __init__(self, in_size, out_size):
         super().__init__()
-        self.W = nn.Linear(in_size, out_size, bias=False)
+        self.W = torch.nn.Linear(in_size, out_size, bias=False)
 
     def forward(self, dcsr, x):
         x = self.W(x)
@@ -20,7 +19,7 @@ class GCNConv(nn.Module):
         return x
 
 
-class GCN(nn.Module):
+class GCN(torch.nn.Module):
 
     def __init__(self, in_size, out_size, hidden_size):
         super().__init__()

@@ -1,0 +1,9 @@
+include MANIFEST.in
+include LICENSE
+
+recursive-include dgsparse *.*
+recursive-include include *.*
+recursive-include src *.*
+recursive-include test *.*
+prune */__pycache__
+global-exclude *.o *.so *.dylib *.a .git *.pyc *.swp

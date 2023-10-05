@@ -93,17 +93,13 @@ test_requires = [
     'pytest-cov',
 ]
 
-# work-around hipify abs paths
-include_package_data = True
-if torch.cuda.is_available():
-    include_package_data = False
 
 setup(
-    name='dgsparse',
+    name='dgsparse-lib',
     version=__version__,
-    description=('Dgsparse Library'),
-    author='',
-    author_email='',
+    description=(' PyTorch-Based Fast and Efficient Processing for Various Machine Learning Applications with Diverse Sparsity'),
+    author='dgsparse team',
+    author_email='team@dgsparse.org',
     url=URL,
     download_url=f'{URL}/archive/{__version__}.tar.gz',
     keywords=[
@@ -122,5 +118,5 @@ setup(
         BuildExtension.with_options(no_python_abi_suffix=True, use_ninja=False)
     },
     packages=find_packages(),
-    include_package_data=include_package_data,
+    include_package_data=True,
 )

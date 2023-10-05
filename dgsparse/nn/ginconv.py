@@ -1,12 +1,12 @@
 import torch
-import torch.nn as nn
+
 import torch.nn.functional as F
 
 import torch_sparse
 from dgsparse import spmm_sum, spmm_max, spmm_mean, SparseTensor
 
 
-class GINConv(nn.Module):
+class GINConv(torch.nn.Module):
 
     def __init__(
         self,
@@ -24,7 +24,7 @@ class GINConv(nn.Module):
         self.cached = cached
         self._cached_dcsr = None
         if learn_eps:
-            self.eps = nn.Parameter(torch.FloatTensor([init_eps]))
+            self.eps = torch.nn.Parameter(torch.FloatTensor([init_eps]))
         else:
             self.register_buffer('eps', torch.FloatTensor([init_eps]))
 
@@ -70,7 +70,7 @@ class GINConv(nn.Module):
         return rst
 
 
-class GIN(nn.Module):
+class GIN(torch.nn.Module):
 
     def __init__(
         self,
@@ -85,7 +85,7 @@ class GIN(nn.Module):
     ):
         super().__init__()
         self.conv1 = GINConv(
-            nn.Linear(in_size, hidden_size),
+            torch.nn.Linear(in_size, hidden_size),
             aggregator_type,
             init_eps,
             learn_eps,
@@ -93,7 +93,7 @@ class GIN(nn.Module):
             cached,
         )
         self.conv2 = GINConv(
-            nn.Linear(hidden_size, out_size),
+            torch.nn.Linear(hidden_size, out_size),
             aggregator_type,
             init_eps,
             learn_eps,

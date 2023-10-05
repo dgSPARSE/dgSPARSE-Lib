@@ -2,13 +2,13 @@ import importlib
 import os.path as osp
 import torch
 import dgsparse._C
-import dgsparse.nn
 import dgsparse.spmm
 import dgsparse.tensor
 import dgsparse.storage
 from .spmm import spmm_max, spmm_mean, spmm_sum, spmm_min
 from .tensor import SparseTensor
 from .storage import Storage
+from . import nn
 
 __version__ = '0.1'
 
