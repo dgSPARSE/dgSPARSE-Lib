@@ -1,7 +1,8 @@
 import torch
 # import mkl
 from scipy.io import mmread
-
+from dgsparse import SparseTensor
+from dgsparse import csr2csc
 # from dgsparse import spmm_sum
 
 
@@ -24,9 +25,20 @@ class Csr2Csc:
         self.rows = shape[0]
         self.cols = shape[1]
 
+        self.tcsr = torch.sparse_csr_tensor(
+            self.rowptr,
+            self.colind,
+            self.weight,
+            dtype=torch.float,
+            size=(self.rows, self.cols),
+            requires_grad=True,
+            device=self.device,
+        )
+        self.dcsr = SparseTensor.from_torch_sparse_csr_tensor(
+            self.tcsr.clone().detach(), True, requires_grad=True)
+
     def check(self):
-        colptr, row, weight_transpose = torch.ops.dgsparse_spmm.csr2csc(
-            self.rows, self.cols, self.rowptr, self.colind, self.weight)
+        colptr, row, weight_transpose = csr2csc(self.dcsr)
         tran_s = self.sparsecsr.tocsc()
         colptr_check = torch.from_numpy(tran_s.indptr).to(self.device).int()
         row_check = torch.from_numpy(tran_s.indices).to(self.device).int()

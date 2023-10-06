@@ -8,6 +8,7 @@ import dgsparse.storage
 from .spmm import spmm_max, spmm_mean, spmm_sum, spmm_min
 from .tensor import SparseTensor
 from .storage import Storage
+from .ftransform import csr2csc
 from . import nn  # noqa
 
 __version__ = '0.1'
@@ -43,5 +44,6 @@ if torch.version.cuda is not None and cuda_version != -1:  # pragma: no cover
 # from .tensor import SparseTensor
 
 __all__ = [
-    'spmm_sum', 'spmm_max', 'spmm_min', 'spmm_mean', 'Storage', 'SparseTensor'
+    'spmm_sum', 'spmm_max', 'spmm_min', 'spmm_mean', 'Storage', 'SparseTensor',
+    'csr2csc'
 ]

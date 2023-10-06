@@ -9,8 +9,7 @@
 
 #include "../include/cuda/spmm_cuda.h"
 
-std::vector<torch::Tensor> csr2csc(int64_t rows, int64_t cols,
-                                   torch::Tensor rowptr, torch::Tensor colind,
+std::vector<torch::Tensor> csr2csc(torch::Tensor rowptr, torch::Tensor colind,
                                    torch::Tensor values);
 
 torch::Tensor spmm_sum(torch::Tensor rowptr, torch::Tensor col,
@@ -84,8 +83,7 @@ torch::Tensor spmm_sum(torch::Tensor rowptr, torch::Tensor col,
   return SpMMSum::apply(rowptr, col, values, dense, has_value, algorithm);
 }
 
-std::vector<torch::Tensor> csr2csc(int64_t rows, int64_t cols,
-                                   torch::Tensor rowptr, torch::Tensor colind,
+std::vector<torch::Tensor> csr2csc(torch::Tensor rowptr, torch::Tensor colind,
                                    torch::Tensor values) {
   return csr2csc_cuda(rowptr, colind, values);
 }
