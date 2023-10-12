@@ -24,7 +24,8 @@ class SpMMSum:
         self.algorithm = algorithm
         # self.input_feature = data.features
         self.input_feature = torch.rand((data.num_nodes, in_dim),
-                                        device=device, requires_grad=True)
+                                        device=device,
+                                        requires_grad=True)
         # self.input_feature =
         # torch.randn((self.dcsr.storage.sparse_sizes[1], 1)).to(device)
         # print(self.input_feature.size())
@@ -70,12 +71,12 @@ class SpMMSum:
     def backward_check(self):
         #warm up
         for _ in range(10):
-            out = self.adj_t.spmm(self.input_feature, reduce="sum")
+            out = self.adj_t.spmm(self.input_feature, reduce='sum')
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-        #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
-            out = self.adj_t.spmm(self.input_feature, reduce="sum")
+            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='sum')
             out.sum().backward()
         torch.cuda.synchronize()
         end = time.time()
@@ -124,7 +125,8 @@ class SpMMMax:
         self.algorithm = algorithm
         # self.input_feature = data.features
         self.input_feature = torch.rand((data.num_nodes, in_dim),
-                                        device=device, requires_grad=True)
+                                        device=device,
+                                        requires_grad=True)
 
     def forward_check(self):
         # warm up
@@ -169,12 +171,12 @@ class SpMMMax:
     def backward_check(self):
         #warm up
         for _ in range(10):
-            out = self.adj_t.spmm(self.input_feature, reduce="max")
+            out = self.adj_t.spmm(self.input_feature, reduce='max')
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-        #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
-            out = self.adj_t.spmm(self.input_feature, reduce="max")
+            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='max')
             out.sum().backward()
         torch.cuda.synchronize()
         end = time.time()
@@ -223,7 +225,8 @@ class SpMMMin:
         self.algorithm = algorithm
         # self.input_feature = data.features
         self.input_feature = torch.rand((data.num_nodes, in_dim),
-                                        device=device, requires_grad=True)
+                                        device=device,
+                                        requires_grad=True)
 
     def forward_check(self):
         # warm up
@@ -268,12 +271,12 @@ class SpMMMin:
     def backward_check(self):
         #warm up
         for _ in range(10):
-            out = self.adj_t.spmm(self.input_feature, reduce="min")
+            out = self.adj_t.spmm(self.input_feature, reduce='min')
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-        #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
-            out = self.adj_t.spmm(self.input_feature, reduce="min")
+            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='min')
             out.sum().backward()
         torch.cuda.synchronize()
         end = time.time()
@@ -322,7 +325,8 @@ class SpMMMean:
         self.algorithm = algorithm
         # self.input_feature = data.features
         self.input_feature = torch.rand((data.num_nodes, in_dim),
-                                        device=device, requires_grad=True)
+                                        device=device,
+                                        requires_grad=True)
 
     def forward_check(self):
         # warm up
@@ -367,12 +371,12 @@ class SpMMMean:
     def backward_check(self):
         #warm up
         for _ in range(10):
-            out = self.adj_t.spmm(self.input_feature, reduce="mean")
+            out = self.adj_t.spmm(self.input_feature, reduce='mean')
         torch.cuda.synchronize()
         start = time.time()
         for i in range(100):
-        #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
-            out = self.adj_t.spmm(self.input_feature, reduce="mean")
+            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            out = self.adj_t.spmm(self.input_feature, reduce='mean')
             out.sum().backward()
         torch.cuda.synchronize()
         end = time.time()
@@ -403,7 +407,6 @@ class SpMMMean:
         dgsparse_time = end - start
 
         return torch_sparse_time, dgl_time, dgsparse_time
-
 
 
 def check_time(gc, direction='forward'):
@@ -441,7 +444,7 @@ def test_spmm_time(dataset, in_dim, device, reduce='sum'):
     else:
         raise ValueError
     # check_time(gc, direction='forward')
-    check_time(gc, direction="backward")
+    check_time(gc, direction='backward')
 
 
 if __name__ == '__main__':

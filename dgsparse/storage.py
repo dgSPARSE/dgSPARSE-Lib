@@ -207,8 +207,11 @@ class Storage(object):
         rows, cols = self.sparse_sizes
         device = self._col.device
         # idx = torch.range(0, 100, device=device)
-        idx = torch.arange(self._col.shape[0], device=device, dtype=torch.float)
-        colptr, row, csr2csc = torch.ops.dgsparse_spmm.csr2csc(self._rowptr, self._col, idx)
+        idx = torch.arange(self._col.shape[0],
+                           device=device,
+                           dtype=torch.float)
+        colptr, row, csr2csc = torch.ops.dgsparse_spmm.csr2csc(
+            self._rowptr, self._col, idx)
         csr2csc = csr2csc.to(torch.int)
         if self._row is None:
             self._row = row
