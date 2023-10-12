@@ -51,6 +51,8 @@ class GraphDataset:
         print(f'graph is: {graph}')
         dgl_graph = dgl.from_scipy(scipy_coo)
         self.dgl_graph = dgl_graph.to(self.device)
+        adj_t = torch_sparse.SparseTensor.from_scipy(scipy_coo)
+        self.adj_t = adj_t.to(self.device).requires_grad_()
         # print(dgl_graph)
         # print(dgl_graph.adj())
         # print(dgl_graph.adj().val.sum())
@@ -68,18 +70,18 @@ class GraphDataset:
             requires_grad=True,
             device=self.device,
         )
-        adj_t = torch.sparse_csr_tensor(
-            torch.tensor(rowptr, dtype=torch.long),
-            torch.tensor(col, dtype=torch.long),
-            weight,
-            dtype=torch.float,
-            size=(self.num_nodes, self.num_nodes),
-            requires_grad=True,
-            device=self.device,
-        )
-        self.adj_t = torch_sparse.SparseTensor.from_torch_sparse_csr_tensor(
-            adj_t)
+        # adj_t = torch.sparse_csr_tensor(
+        #     torch.tensor(rowptr, dtype=torch.long),
+        #     torch.tensor(col, dtype=torch.long),
+        #     weight,
+        #     dtype=torch.float,
+        #     size=(self.num_nodes, self.num_nodes),
+        #     requires_grad=True,
+        #     device=self.device,
+        # )
+        # self.adj_t = torch_sparse.SparseTensor.from_torch_sparse_csr_tensor(
+        #     adj_t)
         self.features = graph.x.to(self.device)
-        self.dgl_A = dglsp.spmatrix(graph.edge_index,
-                                    shape=(self.num_nodes,
-                                           self.num_nodes)).to(self.device)
+        # self.dgl_A = dglsp.spmatrix(graph.edge_index,
+        #                             shape=(self.num_nodes,
+        #                                    self.num_nodes)).to(self.device)

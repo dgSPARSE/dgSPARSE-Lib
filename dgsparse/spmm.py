@@ -22,8 +22,13 @@ def spmm_sum(sparse: SparseTensor, dense: torch.Tensor,
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse_spmm.spmm_sum(rowptr, col, values, dense,
-                                            has_value, algorithm)
+
+    _csr2csc = sparse.storage.csr2csc()
+    _colptr = sparse.storage._colptr
+    _row = sparse.storage._row
+
+    return torch.ops.dgsparse_spmm.spmm_sum(rowptr, col, values, _colptr, _row, _csr2csc,
+                                            dense, has_value, algorithm)
 
 
 def spmm_mean(sparse: SparseTensor, dense: torch.Tensor,
@@ -42,8 +47,13 @@ def spmm_mean(sparse: SparseTensor, dense: torch.Tensor,
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse_spmm.spmm_mean(rowptr, col, values, dense,
-                                             has_value, algorithm)
+
+    _csr2csc = sparse.storage.csr2csc()
+    _colptr = sparse.storage._colptr
+    _row = sparse.storage._row
+
+    return torch.ops.dgsparse_spmm.spmm_mean(rowptr, col, values, _colptr, _row, _csr2csc,
+                                            dense, has_value, algorithm)
 
 
 def spmm_max(sparse: SparseTensor, dense: torch.Tensor,
@@ -62,8 +72,13 @@ def spmm_max(sparse: SparseTensor, dense: torch.Tensor,
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse_spmm.spmm_max(rowptr, col, values, dense,
-                                            has_value, algorithm)
+    
+    _csr2csc = sparse.storage.csr2csc()
+    _colptr = sparse.storage._colptr
+    _row = sparse.storage._row
+
+    return torch.ops.dgsparse_spmm.spmm_max(rowptr, col, values, _colptr, _row, _csr2csc,
+                                            dense, has_value, algorithm)
 
 
 def spmm_min(sparse: SparseTensor, dense: torch.Tensor,
@@ -82,5 +97,12 @@ def spmm_min(sparse: SparseTensor, dense: torch.Tensor,
     rowptr = sparse.storage._rowptr
     col = sparse.storage._col
     values = sparse.storage._values
-    return torch.ops.dgsparse_spmm.spmm_min(rowptr, col, values, dense,
-                                            has_value, algorithm)
+    
+    _csr2csc = sparse.storage.csr2csc()
+    _colptr = sparse.storage._colptr
+    _row = sparse.storage._row
+
+    return torch.ops.dgsparse_spmm.spmm_min(rowptr, col, values, _colptr, _row, _csr2csc,
+                                            dense, has_value, algorithm)
+
+
