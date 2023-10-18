@@ -373,7 +373,6 @@ torch::Tensor sddmm_cuda_csr_with_mask(torch::Tensor rowptr,
   auto options =
       torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA, devid);
   auto out = torch::empty({1, nnz}, options);
-  printf("[SDDMM_WITH_MASK].\n");
   sddmmCSR1Scale_with_mask<<<dim3(nnz / 16 + (nnz & 15), 1, 1),
                              dim3(32, 4, 1)>>>(
       m, k, nnz, rowptr.data_ptr<int>(), colind.data_ptr<int>(),
