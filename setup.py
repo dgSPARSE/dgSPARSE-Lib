@@ -55,6 +55,8 @@ def get_extensions():
         if suffix == 'cuda' and osp.exists(path):
             sources += [path]
         Extension = CUDAExtension
+        if name == 'spconv': # ignore spconv
+            continue
         if name == 'version':
             extension = Extension(
                 'dgsparse._C',
