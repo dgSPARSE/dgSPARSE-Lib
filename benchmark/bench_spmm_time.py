@@ -68,14 +68,14 @@ class SpMMSum:
 
         return torch_sparse_time, dgl_time, dgsparse_time
 
-    def backward_check(self):
-        #warm up
+    def backward_check(self):  # warm up
         for _ in range(10):
             out = self.adj_t.spmm(self.input_feature, reduce='sum')
         torch.cuda.synchronize()
         start = time.time()
         for _ in range(100):
-            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            #     out_check = torch_sparse.spmm_sum(self.adj_t,
+            #  self.input_feature)
             out = self.adj_t.spmm(self.input_feature, reduce='sum')
             out.sum().backward()
         torch.cuda.synchronize()
@@ -169,13 +169,14 @@ class SpMMMax:
         return torch_sparse_time, dgl_time, dgsparse_time
 
     def backward_check(self):
-        #warm up
+        # warm up
         for _ in range(10):
             out = self.adj_t.spmm(self.input_feature, reduce='max')
         torch.cuda.synchronize()
         start = time.time()
         for _ in range(100):
-            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            #     out_check = torch_sparse.spmm_sum(self.adj_t,
+            # self.input_feature)
             out = self.adj_t.spmm(self.input_feature, reduce='max')
             out.sum().backward()
         torch.cuda.synchronize()
@@ -269,13 +270,14 @@ class SpMMMin:
         return torch_sparse_time, dgl_time, dgsparse_time
 
     def backward_check(self):
-        #warm up
+        # warm up
         for _ in range(10):
             out = self.adj_t.spmm(self.input_feature, reduce='min')
         torch.cuda.synchronize()
         start = time.time()
         for _ in range(100):
-            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            #     out_check = torch_sparse.spmm_sum(self.adj_t,
+            # self.input_feature)
             out = self.adj_t.spmm(self.input_feature, reduce='min')
             out.sum().backward()
         torch.cuda.synchronize()
@@ -369,13 +371,14 @@ class SpMMMean:
         return torch_sparse_time, dgl_time, dgsparse_time
 
     def backward_check(self):
-        #warm up
+        # warm up
         for _ in range(10):
             out = self.adj_t.spmm(self.input_feature, reduce='mean')
         torch.cuda.synchronize()
         start = time.time()
         for _ in range(100):
-            #     out_check = torch_sparse.spmm_sum(self.adj_t, self.input_feature)
+            #     out_check = torch_sparse.spmm_sum(self.adj_t,
+            # self.input_feature)
             out = self.adj_t.spmm(self.input_feature, reduce='mean')
             out.sum().backward()
         torch.cuda.synchronize()

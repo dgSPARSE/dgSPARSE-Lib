@@ -49,8 +49,8 @@ def spmm_mean(sparse: SparseTensor, dense: torch.Tensor,
     colptr = sparse.storage.colptr()
     row = sparse.storage.row()
 
-    return torch.ops.dgsparse_spmm.spmm_mean(rowptr, col, values, colptr,
-                                             row, csr2csc, dense, has_value,
+    return torch.ops.dgsparse_spmm.spmm_mean(rowptr, col, values, colptr, row,
+                                             csr2csc, dense, has_value,
                                              algorithm)
 
 

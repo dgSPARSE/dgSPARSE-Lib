@@ -13,7 +13,7 @@ from . import nn  # noqa
 
 __version__ = '0.1'
 
-for library in ['_spmm']: # ignore spconv
+for library in ['_spmm']:  # ignore spconv
     cuda_spec = importlib.machinery.PathFinder().find_spec(
         f'{library}_cuda', [osp.dirname(__file__)])
     # cpu_spec = importlib.machinery.PathFinder().find_spec(

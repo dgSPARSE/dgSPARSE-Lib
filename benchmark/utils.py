@@ -3,7 +3,6 @@ from ogb.nodeproppred import PygNodePropPredDataset
 from torch_geometric.utils import to_scipy_sparse_matrix
 import torch
 import torch_sparse
-import dgl.sparse as dglsp
 import dgl
 
 

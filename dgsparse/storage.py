@@ -127,35 +127,35 @@ class Storage(object):
             return rowptr
         else:
             raise ValueError
-        
+
     def col(self) -> torch.Tensor:
         col = self._col
         if col is not None:
             return col
         else:
             raise ValueError
-        
+
     def colptr(self) -> torch.Tensor:
         colptr = self._colptr
         if colptr is not None:
             return colptr
         else:
             raise ValueError
-        
+
     def values(self) -> torch.Tensor:
         values = self._values
         if values is not None:
             return values
         else:
             raise ValueError
-        
+
     def csr2csc(self) -> torch.Tensor:
         csr2csc = self._csr2csc
         if csr2csc is not None:
             return csr2csc
         else:
             raise ValueError
-    
+
     def csr2csc_convert(self):
         if self._csr2csc is not None:
             return self._csr2csc
