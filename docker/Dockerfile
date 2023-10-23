@@ -31,7 +31,7 @@ ENV MKL=/opt/intel/mkl
 ENV LD_LIBRARY_PATH=$MKL/lib/intel64:${LD_LIBRARY_PATH}
 
 
-COPY install/build_wheel.sh /install/conda_env.sh
+COPY install/conda_env.sh /install/conda_env.sh
 RUN bash /install/conda_env.sh
 
 
