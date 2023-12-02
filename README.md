@@ -16,13 +16,17 @@ export CUDA_HOME=/usr/local/cuda # your cuda path
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64 # your cuda lib path
 ```
 
-Then, install with pip.
+Then, install with conda.
+
+```bash
+conda install -c dgsparse dgsparse
+```
+
+Or you can build from source
 
 ```bash
 pip install -e .
 ```
-
-Our new package via conda install will be coming soon! Wait and see our v0.1.1 update then.
 
 A demo for SpMM inference time compared to other main-stream library. (Tested on RTX 3090 with feature=64).
 ![image1](benchmark/datasets_comparison.jpg)
