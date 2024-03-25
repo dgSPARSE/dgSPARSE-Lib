@@ -11,10 +11,10 @@
 /// heuristic choice of thread-block size
 const int RefThreadPerBlock = 256;
 
-#define CEIL(x, y) (((x) + (y)-1) / (y))
+#define CEIL(x, y) (((x) + (y) - 1) / (y))
 
 #define FULLMASK 0xffffffff
-#define DIV_UP(x, y) (((x) + (y)-1) / (y))
+#define DIV_UP(x, y) (((x) + (y) - 1) / (y))
 #define MIN(a, b) ((a < b) ? a : b)
 #define MAX(a, b) ((a < b) ? b : a)
 
