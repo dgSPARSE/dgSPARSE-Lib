@@ -9,7 +9,7 @@
 #include "device_atomic_functions.h"
 #include "device_launch_parameters.h"
 
-#define CEIL(x, y) (((x) + (y)-1) / (y))
+#define CEIL(x, y) (((x) + (y) - 1) / (y))
 
 #define FULLMASK 0xffffffff
 #define MIN(a, b) ((a < b) ? a : b)

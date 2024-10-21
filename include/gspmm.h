@@ -96,16 +96,24 @@ struct Div {
   ({                                                                           \
     if (op == SUM) {                                                           \
       typedef Sum Op;                                                          \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else if (op == MAX) {                                                    \
       typedef Max Op;                                                          \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else if (op == MIN) {                                                    \
       typedef Min Op;                                                          \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else if (op == MEAN) {                                                   \
       typedef Mean Op;                                                         \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else {                                                                   \
       printf("unsupported op \n");                                             \
     }                                                                          \
@@ -115,16 +123,24 @@ struct Div {
   ({                                                                           \
     if (op == ADD) {                                                           \
       typedef Add Op;                                                          \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else if (op == SUB) {                                                    \
       typedef Sub Op;                                                          \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else if (op == MUL) {                                                    \
       typedef Mul Op;                                                          \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else if (op == DIV) {                                                    \
       typedef Div Op;                                                          \
-      { __VA_ARGS__ }                                                          \
+      {                                                                        \
+        __VA_ARGS__                                                            \
+      }                                                                        \
     } else {                                                                   \
       printf("unsupported op \n");                                             \
     }                                                                          \
