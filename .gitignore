@@ -11,3 +11,15 @@ build/
 setup.cfg
 .vscode
 *.DS_Store
+
+# Auto-generated hipified files (torch.utils.hipify)
+include/hip/
+include/gspmm_hip.h
+src/hip/
+*_hip.cpp
+*_hip.h
+# Windows ROCm build shims (byte copies of .cpp routed through hipcc) and
+# their hipified outputs
+*_winhip.cu
+*_winhip.hip
+*.pyd
