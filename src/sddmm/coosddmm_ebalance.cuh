@@ -1,4 +1,8 @@
+#ifdef USE_ROCM
+#include <hip/hip_runtime.h>
+#else
 #include <cuda.h>
+#endif
 
 #include "../util/cuda_util.cuh"
 
@@ -65,7 +69,7 @@ __global__ void sddmm_coo_ebalance_vec4(int D_kcols, const int Size,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
@@ -136,7 +140,7 @@ __global__ void sddmm_coo_ebalance_vec2(int D_kcols, const int Size,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
@@ -203,7 +207,7 @@ __global__ void sddmm_coo_ebalance_scalar(int D_kcols, const int Size,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;

@@ -11,6 +11,16 @@
 #include <tuple>
 #include <vector>
 
+// ROCm/HIP compatibility: hipify does not map these symbols
+#ifdef USE_ROCM
+#ifndef CUBLAS_COMPUTE_16F
+#define CUBLAS_COMPUTE_16F HIPBLAS_COMPUTE_16F
+#endif
+#ifndef CUBLAS_TENSOR_OP_MATH
+#define CUBLAS_TENSOR_OP_MATH HIPBLAS_DEFAULT_MATH
+#endif
+#endif
+
 #include "../../include/cuda/cuda_util.cuh"
 #include "../../include/cuda/spconv.cuh"
 #include "../../include/cuda/spconv_cuda.h"

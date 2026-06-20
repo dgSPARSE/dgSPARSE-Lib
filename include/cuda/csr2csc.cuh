@@ -5,6 +5,15 @@
 
 #include "cuda_util.cuh"
 
+// torch's hipify lacks mappings for these cusparse Csr2csc symbols; provide
+// them under USE_ROCM so the hipified copy compiles without modification.
+#ifdef USE_ROCM
+#define cusparseCsr2cscEx2_bufferSize hipsparseCsr2cscEx2_bufferSize
+#define cusparseCsr2cscEx2 hipsparseCsr2cscEx2
+#define CUSPARSE_ACTION_NUMERIC HIPSPARSE_ACTION_NUMERIC
+#define CUSPARSE_CSR2CSC_ALG1 HIPSPARSE_CSR2CSC_ALG1
+#endif
+
 void csr2cscKernel(int m, int n, int nnz, int devid, int *csrRowPtr,
                    int *csrColInd, float *csrVal, int *cscColPtr,
                    int *cscRowInd, float *cscVal) {

@@ -1,17 +1,27 @@
 #ifndef UTIL_H
 #define UTIL_H
+
+#ifdef USE_ROCM
+#include <hip/hip_runtime.h>
+#else
+#include "device_atomic_functions.h"
+#include "device_launch_parameters.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
-#include "device_atomic_functions.h"
-#include "device_launch_parameters.h"
-
 #define CEIL(x, y) (((x) + (y)-1) / (y))
 
+// ROCm 7.2.1+ requires 64-bit mask for warp sync functions
+#ifdef USE_ROCM
+#define FULLMASK 0xffffffffffffffffULL
+#else
 #define FULLMASK 0xffffffff
+#endif
 #define MIN(a, b) ((a < b) ? a : b)
 #define MAX(a, b) ((a < b) ? b : a)
 
@@ -113,6 +123,17 @@ enum gespmmAlg_t {
   if (tmps == segid && lane_id < 16)                                           \
     v += tmpv;
 
+#ifdef USE_ROCM
+#define checkCudaError(a)                                                      \
+  do {                                                                         \
+    if (hipSuccess != (a)) {                                                   \
+      fprintf(stderr, "Hip runTime error in line %d of file %s \
+    : %s \n",                                                                  \
+              __LINE__, __FILE__, hipGetErrorString(hipGetLastError()));       \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  } while (0)
+#else
 #define checkCudaError(a)                                                      \
   do {                                                                         \
     if (cudaSuccess != (a)) {                                                  \
@@ -122,7 +143,19 @@ enum gespmmAlg_t {
       exit(EXIT_FAILURE);                                                      \
     }                                                                          \
   } while (0)
+#endif
 
+#ifdef USE_ROCM
+#define checkCuSparseError(a)                                                  \
+  do {                                                                         \
+    if (HIPSPARSE_STATUS_SUCCESS != (a)) {                                     \
+      fprintf(stderr, "HipSparse runTime error in line %d of file %s \
+    : %s \n",                                                                  \
+              __LINE__, __FILE__, hipGetErrorString(hipGetLastError()));       \
+      exit(EXIT_FAILURE);                                                      \
+    }                                                                          \
+  } while (0)
+#else
 #define checkCuSparseError(a)                                                  \
   do {                                                                         \
     if (CUSPARSE_STATUS_SUCCESS != (a)) {                                      \
@@ -132,6 +165,7 @@ enum gespmmAlg_t {
       exit(EXIT_FAILURE);                                                      \
     }                                                                          \
   } while (0)
+#endif
 __device__ __forceinline__ float sum_reduce(float acc, float x) {
   return acc + x;
 }
@@ -255,10 +289,10 @@ template <typename data>
 __device__ __forceinline__ void AllReduce4(data *multi, int stride,
                                            int warpSize) {
   for (; stride > 0; stride >>= 1) {
-    multi[0] += __shfl_xor_sync(0xffffffff, multi[0], stride, warpSize);
-    multi[1] += __shfl_xor_sync(0xffffffff, multi[1], stride, warpSize);
-    multi[2] += __shfl_xor_sync(0xffffffff, multi[2], stride, warpSize);
-    multi[3] += __shfl_xor_sync(0xffffffff, multi[3], stride, warpSize);
+    multi[0] += __shfl_xor_sync(FULLMASK, multi[0], stride, warpSize);
+    multi[1] += __shfl_xor_sync(FULLMASK, multi[1], stride, warpSize);
+    multi[2] += __shfl_xor_sync(FULLMASK, multi[2], stride, warpSize);
+    multi[3] += __shfl_xor_sync(FULLMASK, multi[3], stride, warpSize);
   }
 }
 
@@ -266,7 +300,7 @@ template <typename data>
 __device__ __forceinline__ void AllReduce(data multi, int stride,
                                           int warpSize) {
   for (; stride > 0; stride >>= 1) {
-    multi += __shfl_xor_sync(0xffffffff, multi, stride, warpSize);
+    multi += __shfl_xor_sync(FULLMASK, multi, stride, warpSize);
   }
 }
 

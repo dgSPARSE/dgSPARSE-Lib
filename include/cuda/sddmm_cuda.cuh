@@ -1,14 +1,18 @@
 #ifndef SDDMM_CUDA
 #define SDDMM_CUDA
 
+#ifdef USE_ROCM
+#include <hip/hip_runtime.h>
+#else
+#include "device_atomic_functions.h"
+#include "device_launch_parameters.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
+#endif
 
 #include "../gspmm.h"
 #include "cuda_util.cuh"
-#include "device_atomic_functions.h"
-#include "device_launch_parameters.h"
 
 __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
                                int *S_cooRowInd, int *S_cooColInd,
@@ -73,7 +77,7 @@ __global__ void sddmmCOO4Scale(int D_kcols, const unsigned long Size,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
@@ -144,7 +148,7 @@ __global__ void sddmmCOO2Scale(int D_kcols, const unsigned long Size,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
@@ -211,7 +215,7 @@ __global__ void sddmmCOO1Scale(int D_kcols, const unsigned long Size,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_cooVal[eid] = multi;
@@ -299,7 +303,7 @@ __global__ void sddmmCSR2Scale(const int S_mrows, int D_kcols,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (REDUCE::Op == MEAN && length > 0) {
       multi /= length;
@@ -389,7 +393,7 @@ __global__ void sddmmCSR1Scale(const int S_mrows, int D_kcols,
       multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (REDUCE::Op == MEAN && length > 0) {
       multi /= length;
@@ -498,7 +502,7 @@ __global__ void sddmmCSR1Scale_with_mask(const int S_mrows, int D_kcols,
       // multi += D1tmp0 * D2tmp0;
     }
     for (int stride = 16; stride > 0; stride >>= 1) {
-      multi += __shfl_xor_sync(0xffffffff, multi, stride, 32);
+      multi += __shfl_xor_sync(FULLMASK, multi, stride, 32);
     }
     if (threadIdx.x == 0 && threadIdx.y == 0) {
       O_csrVal[eid] = multi;

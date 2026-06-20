@@ -28,6 +28,15 @@ Or you can build from source
 pip install -e .
 ```
 
+### Building on AMD GPUs (ROCm)
+
+dgSPARSE also builds on AMD GPUs with ROCm. Install a ROCm build of PyTorch, then build from source the same way -- the CUDA sources are translated to HIP at build time by PyTorch's `torch.utils.hipify`, and the library links against hipSPARSE instead of cuSPARSE:
+
+```bash
+export PYTORCH_ROCM_ARCH=gfx90a # your AMD GPU arch (e.g. gfx90a, gfx942, gfx1100, gfx1201)
+pip install -e .
+```
+
 A demo for SpMM inference time compared to other main-stream library. (Tested on RTX 3090 with feature=64).
 ![image1](benchmark/datasets_comparison.jpg)
 

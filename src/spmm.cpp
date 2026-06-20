@@ -268,3 +268,11 @@ TORCH_LIBRARY(dgsparse_spmm, m) {
   m.def("spmm_mean", &spmm_mean);
   m.def("csr2csc", &csr2csc);
 }
+
+// On Windows, torch's BuildExtension exports PyInit_<name> for every
+// CUDAExtension. The spmm extension is loaded via torch.ops.load_library
+// (not Python import), so PyInit_ is never called, but MSVC requires it
+// to be resolvable at link time.
+#ifdef _WIN32
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {}
+#endif

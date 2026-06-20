@@ -2,18 +2,26 @@
 
 #pragma once
 
+#ifdef USE_ROCM
+#include <hip/hip_runtime.h>
+#else
+#include "device_launch_parameters.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
-
-#include "device_launch_parameters.h"
+#endif
 
 /// heuristic choice of thread-block size
 const int RefThreadPerBlock = 256;
 
 #define CEIL(x, y) (((x) + (y)-1) / (y))
 
+// ROCm 7.2.1+ requires 64-bit mask for warp sync functions
+#ifdef USE_ROCM
+#define FULLMASK 0xffffffffffffffffULL
+#else
 #define FULLMASK 0xffffffff
+#endif
 #define DIV_UP(x, y) (((x) + (y)-1) / (y))
 #define MIN(a, b) ((a < b) ? a : b)
 #define MAX(a, b) ((a < b) ? b : a)
