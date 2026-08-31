@@ -3,8 +3,7 @@
 extern "C"
 #define _INT4(pointer) (reinterpret_cast<int4 *>(&(pointer))[0])
 
-    inline __device__ int
-    buffer_encoder(const int k_id, const int k_map_id) {
+    inline __device__ int buffer_encoder(const int k_id, const int k_map_id) {
   return (k_id * 1186111 + k_map_id);
 }
 
